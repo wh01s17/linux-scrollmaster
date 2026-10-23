@@ -156,8 +156,25 @@ sha256sum --check --ignore-missing SHA256SUMS
 
 ### Actualizar
 
-Instala el paquete de la versión nueva con el mismo comando de tu distribución.
-Tus perfiles se conservan.
+La app no se actualiza sola. Para pasar a una versión nueva:
+
+1. Cierra Linux ScrollMaster, también desde la bandeja (**Salir de Linux ScrollMaster**),
+   para que no siga corriendo la versión anterior.
+2. Descarga el paquete nuevo desde [Releases](https://github.com/wh01s17/linux-scrollmaster/releases/latest) e instálalo con el mismo
+   comando de la primera instalación. Cambia `X.Y.Z` por la versión nueva:
+
+   | Sistema | Comandos |
+   |---|---|
+   | Arch | `curl -fLO https://github.com/wh01s17/linux-scrollmaster/releases/download/vX.Y.Z/linux-scrollmaster-native-X.Y.Z-1-x86_64.pkg.tar.zst`<br>`sudo pacman -U ./linux-scrollmaster-native-X.Y.Z-1-x86_64.pkg.tar.zst` |
+   | Debian/Ubuntu | `curl -fLO https://github.com/wh01s17/linux-scrollmaster/releases/download/vX.Y.Z/linux-scrollmaster_X.Y.Z_amd64.deb`<br>`sudo apt install ./linux-scrollmaster_X.Y.Z_amd64.deb` |
+   | Fedora | `curl -fLO https://github.com/wh01s17/linux-scrollmaster/releases/download/vX.Y.Z/linux-scrollmaster-X.Y.Z-1.x86_64.rpm`<br>`sudo dnf install ./linux-scrollmaster-X.Y.Z-1.x86_64.rpm` |
+   | AppImage | descarga el `.AppImage` nuevo, dale permiso de ejecución y borra el anterior |
+
+3. Abre la app de nuevo.
+
+Los perfiles y preferencias de `~/.config/linux-scrollmaster/` se conservan. Revisa el
+[registro de cambios](CHANGELOG.md) antes de actualizar: indica si una versión necesita
+algo más, como reconectar el receptor tras un cambio en la regla udev.
 
 ### Desinstalar
 
