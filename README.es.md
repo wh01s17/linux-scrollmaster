@@ -98,10 +98,12 @@ versión posterior cambia el número en la URL y en el nombre del archivo.
 ### Arch Linux, Manjaro, EndeavourOS, Omarchy
 
 ```sh
-sudo pacman -U https://github.com/wh01s17/linux-scrollmaster/releases/download/v0.1.0/linux-scrollmaster-native-0.1.0-1-x86_64.pkg.tar.zst
+curl -fLO https://github.com/wh01s17/linux-scrollmaster/releases/download/v0.1.0/linux-scrollmaster-native-0.1.0-1-x86_64.pkg.tar.zst
+sudo pacman -U ./linux-scrollmaster-native-0.1.0-1-x86_64.pkg.tar.zst
 ```
 
-Este es el paquete probado con el mouse.
+Este es el paquete probado con el mouse. Descárgalo primero: si instalas directo desde
+la URL, pacman pide una firma `.sig`, y los paquetes no están firmados.
 
 ### Debian, Ubuntu 22.04 o superior, Linux Mint, Pop!_OS
 
@@ -113,7 +115,8 @@ sudo apt install ./linux-scrollmaster_0.1.0_amd64.deb
 ### Fedora y derivadas
 
 ```sh
-sudo dnf install https://github.com/wh01s17/linux-scrollmaster/releases/download/v0.1.0/linux-scrollmaster-0.1.0-1.x86_64.rpm
+curl -fLO https://github.com/wh01s17/linux-scrollmaster/releases/download/v0.1.0/linux-scrollmaster-0.1.0-1.x86_64.rpm
+sudo dnf install ./linux-scrollmaster-0.1.0-1.x86_64.rpm
 ```
 
 ### Cualquier distribución (AppImage)
