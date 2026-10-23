@@ -1,0 +1,22 @@
+node_modules/
+dist/
+src-tauri/target/
+*.exe
+*.dll
+*.msi
+*.pdb
+research-artifacts/
+.codebase-memory/
+__pycache__/
+*.pyc
+*.so
+*.log
+src-tauri/gen/
+art/mouse-render/preview/
+3d/
+art/mouse-render/cache/
+
+# Local AI agent tooling (third-party skills, personal config): never published.
+.agents/
+.claude/
+skills-lock.json

@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Linux ScrollMaster: HID++ interface (02) of the Logi Bolt receiver 046d:c548
+# only, for the user of the active local seat (uaccess ACL). The keyboard and
+# mouse hidraw interfaces (00/01) are NOT granted. No MODE, GROUP or 0666.
+# ID_* properties come from 60-persistent-hidraw.rules; 73-seat-late applies
+# uaccess, so this file must sort between them.
+ACTION=="remove", GOTO="linux_scrollmaster_end"
+SUBSYSTEM!="hidraw", GOTO="linux_scrollmaster_end"
+KERNEL!="hidraw*", GOTO="linux_scrollmaster_end"
+ENV{ID_BUS}=="usb", ENV{ID_VENDOR_ID}=="046d", ENV{ID_MODEL_ID}=="c548", ENV{ID_USB_INTERFACE_NUM}=="02", TAG+="uaccess"
+LABEL="linux_scrollmaster_end"

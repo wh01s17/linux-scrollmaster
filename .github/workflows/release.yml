@@ -1,0 +1,139 @@
+name: Release
+
+# A tag vX.Y.Z builds every package with the native HID++ backend and leaves
+# them in a draft release to review before publishing. Running it by hand only
+# builds the packages as workflow artifacts.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bundles:
+    name: deb, rpm y AppImage
+    # The oldest supported runner: packages then run on newer glibc too.
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Versión del tag
+        if: startsWith(github.ref, 'refs/tags/')
+        run: packaging/check-version.sh "$GITHUB_REF_NAME"
+
+      - name: Bibliotecas del sistema
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential pkg-config file libwebkit2gtk-4.1-dev libgtk-3-dev \
+            libayatana-appindicator3-dev librsvg2-dev libssl-dev \
+            libwayland-dev libxkbcommon-dev
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.3.4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Rust estable
+        run: rustup toolchain install stable --profile minimal && rustup default stable
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Compilar paquetes
+        env:
+          APPIMAGE_EXTRACT_AND_RUN: "1"
+        run: pnpm tauri build --features native-default --config src-tauri/tauri.release.conf.json
+
+      # Tauri names the files after the product ("Linux ScrollMaster_…"):
+      # publish them without spaces.
+      - name: Renombrar paquetes
+        run: |
+          mkdir -p out
+          for file in src-tauri/target/release/bundle/deb/*.deb \
+                      src-tauri/target/release/bundle/rpm/*.rpm \
+                      src-tauri/target/release/bundle/appimage/*.AppImage; do
+            cp "$file" "out/$(basename "$file" | sed 's/^Linux ScrollMaster/linux-scrollmaster/')"
+          done
+          ls -l out
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bundles
+          if-no-files-found: error
+          path: out/*
+
+  arch:
+    name: Paquete Arch
+    runs-on: ubuntu-24.04
+    container: archlinux:base-devel
+    timeout-minutes: 45
+    steps:
+      - name: Dependencias
+        run: |
+          pacman -Syu --noconfirm --needed git python rust nodejs pnpm pkgconf \
+            gtk3 webkit2gtk-4.1 openssl wayland libxkbcommon libayatana-appindicator systemd
+
+      - uses: actions/checkout@v4
+
+      - name: Versión del tag
+        if: startsWith(github.ref, 'refs/tags/')
+        run: packaging/check-version.sh "$GITHUB_REF_NAME"
+
+      - name: makepkg
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          python packaging/arch/prepare.py --variant native /tmp/kit
+          useradd -m builder
+          chown -R builder /tmp/kit
+          su builder -c 'cd /tmp/kit && makepkg -f --noconfirm'
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arch
+          if-no-files-found: error
+          path: /tmp/kit/*.pkg.tar.zst
+
+  publish:
+    name: Borrador de release
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [bundles, arch]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      # Release notes are the CHANGELOG.md section of this version.
+      - name: Notas del changelog
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          awk -v v="$version" '
+            $0 ~ "^## \\[" v "\\]" { found = 1; next }
+            found && /^## \[/ { exit }
+            found { print }
+          ' CHANGELOG.md > notes.md
+          if ! grep -q '[^[:space:]]' notes.md; then
+            echo "CHANGELOG.md no tiene una sección para $version" >&2
+            exit 1
+          fi
+
+      - name: Crear borrador
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          (cd dist && sha256sum -- * > SHA256SUMS)
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --repo "$GITHUB_REPOSITORY" --draft --notes-file notes.md \
+            --title "Linux ScrollMaster $GITHUB_REF_NAME"

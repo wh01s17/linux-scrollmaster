@@ -1,0 +1,115 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Mouse render</title>
+<style>html,body{margin:0;background:transparent}</style>
+<script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.js","three/addons/":"/node_modules/three/examples/jsm/"}}</script>
+<script type="module">
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Offline turntable renderer: driven by render.mjs through the DevTools protocol.
+import * as THREE from "three";
+import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+import { loadParts, buildStepMouse } from "./step-model.js";
+import { stepExtras, STEP_ANCHORS } from "./step-extras.js";
+
+const params = new URLSearchParams(location.search);
+const W = Number(params.get("w") ?? 840);
+const H = Number(params.get("h") ?? 680);
+const SS = Number(params.get("ss") ?? 2);
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(SS);
+renderer.setSize(W, H);
+renderer.setClearColor(0x000000, 0);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+document.body.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+scene.add(new THREE.HemisphereLight(0xe8eef5, 0x1a1c20, 0.55));
+const key = new THREE.DirectionalLight(0xffffff, 2.3);
+key.position.set(40, 160, 90);
+key.castShadow = true;
+key.shadow.mapSize.set(2048, 2048);
+Object.assign(key.shadow.camera, { left: -110, right: 110, top: 110, bottom: -110, near: 10, far: 500 });
+key.shadow.radius = 6;
+key.shadow.bias = -0.0006;
+scene.add(key);
+const rim = new THREE.DirectionalLight(0xcfe2ff, 1.4);
+rim.position.set(-120, 70, -110);
+scene.add(rim);
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(600, 600), new THREE.ShadowMaterial({ opacity: 0.38 }));
+ground.rotation.x = -Math.PI / 2;
+ground.receiveShadow = true;
+scene.add(ground);
+
+const ELEVATION = Number(params.get("el") ?? 17);
+const camera = new THREE.PerspectiveCamera(20, W / H, 10, 3000);
+const DIST = Number(params.get("d") ?? 395);
+const el = (ELEVATION * Math.PI) / 180;
+camera.position.set(DIST * Math.cos(el), DIST * Math.sin(el), 0);
+camera.lookAt(0, 16, 0);
+
+const parts = await loadParts();
+let mouse = null;
+let built = undefined;
+const turntable = new THREE.Group();
+scene.add(turntable);
+function ensure(highlight) {
+  if (built === highlight) return;
+  if (mouse) turntable.remove(mouse);
+  {
+    mouse = buildStepMouse(THREE, parts, { highlight, extras: params.has("bare") ? null : stepExtras });
+    // Measuring aid: a 10 mm grid in model x/y in front of the thumb side.
+    if (params.has("grid")) for (let v = -60; v <= 80; v += 10) {
+      const mat = new THREE.LineBasicMaterial({ color: v % 50 ? 0xff4060 : 0xffe040, transparent: true, opacity: 0.55 });
+      mouse.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(v, -10, -70), new THREE.Vector3(v, 70, -70)]), mat));
+      if (v >= -10 && v <= 70) mouse.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-70, v, -70), new THREE.Vector3(80, v, -70)]), mat));
+    }
+    mouse.userData.anchors = STEP_ANCHORS;
+    window.__debug = mouse.userData.debug;
+    // Centre the footprint on the turntable axis and rest it on the ground.
+    mouse.position.set(0, -3.3, 10);
+  }
+  mouse.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+  turntable.add(mouse);
+  built = highlight;
+}
+window.renderFrame = (angle, highlight = null) => {
+  ensure(highlight);
+  turntable.rotation.y = (angle * Math.PI) / 180;
+  renderer.render(scene, camera);
+  return renderer.domElement.toDataURL("image/png");
+};
+// Screen position (0..1) and facing of each hotspot anchor at a turn angle.
+window.anchors = (angle) => {
+  ensure(built ?? null);
+  turntable.rotation.y = (angle * Math.PI) / 180;
+  turntable.updateMatrixWorld(true);
+  const out = {};
+  for (const [zone, { at, normal }] of Object.entries(mouse.userData.anchors)) {
+    const p = new THREE.Vector3(...at).applyMatrix4(mouse.matrixWorld);
+    const n = new THREE.Vector3(...normal).transformDirection(mouse.matrixWorld);
+    const toCam = camera.position.clone().sub(p).normalize();
+    const s = p.clone().project(camera);
+    out[zone] = { x: +(((s.x + 1) / 2)).toFixed(4), y: +(((1 - s.y) / 2)).toFixed(4), facing: +n.dot(toCam).toFixed(3) };
+  }
+  return out;
+};
+// Orthographic views for measuring (6 px per mm): top looks down -y, left looks at the thumb side.
+window.ortho = (view) => {
+  ensure(built ?? null);
+  turntable.rotation.y = 0;
+  const half = [W / 12, H / 12];
+  const cam = new THREE.OrthographicCamera(-half[0], half[0], half[1], -half[1], 1, 1000);
+  if (view === "top") { cam.position.set(0, 300, 0); cam.up.set(-1, 0, 0); cam.lookAt(0, 0, 0); }
+  else if (view === "left") { cam.position.set(0, 25, -300); cam.lookAt(0, 25, 0); }
+  else { cam.position.set(300, 25, 0); cam.lookAt(0, 25, 0); }
+  renderer.render(scene, cam);
+  return renderer.domElement.toDataURL("image/png");
+};
+window.ready = true;
+</script>

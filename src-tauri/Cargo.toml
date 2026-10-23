@@ -1,0 +1,23 @@
+[package]
+name = "linux-scrollmaster"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.89"
+license = "GPL-3.0-or-later"
+authors = ["wh01s17"]
+default-run = "linux-scrollmaster"
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+[dependencies]
+tauri = { version = "2", features = ["tray-icon"] }
+# StatusNotifierItem backend over D-Bus: unlike AppIndicator it reports clicks,
+# which the tray needs to open the window on a double click.
+tray-icon = { version = "0.25", default-features = false, features = ["ksni"] }
+serde_json = { version = "1", features = ["arbitrary_precision"] }
+serde = "1"
+gtk = "0.18"
+libc = "0.2"
+[features]
+# Native HID++ backend selected unless SCROLLMASTER_BACKEND=solaar. Off by
+# default until physical acceptance; packaging/arch-native enables it.
+native-default = []

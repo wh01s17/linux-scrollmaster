@@ -1,0 +1,40 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Linux ScrollMaster",
+  "version": "0.1.0",
+  "identifier": "io.github.wh01s17.linux-scrollmaster",
+  "build": {
+    "beforeDevCommand": "pnpm dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "pnpm build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Linux ScrollMaster",
+        "width": 1180,
+        "height": 810,
+        "minWidth": 850,
+        "minHeight": 650
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; connect-src ipc: http://ipc.localhost; img-src 'self' data:"
+    }
+  },
+  "bundle": {
+    "active": false,
+    "resources": {
+      "../bridge/service.py": "bridge/service.py",
+      "../bridge/solaar_adapter.py": "bridge/solaar_adapter.py",
+      "../bridge/model.py": "bridge/model.py",
+      "../bridge/modifiers.py": "bridge/modifiers.py",
+      "../bridge/actions.py": "bridge/actions.py",
+      "../bridge/profiles.py": "bridge/profiles.py",
+      "../bridge/gestures.py": "bridge/gestures.py",
+      "../bridge/desktop.py": "bridge/desktop.py",
+      "../bridge/libscrollmaster-keyboard.so": "bridge/libscrollmaster-keyboard.so"
+    }
+  }
+}

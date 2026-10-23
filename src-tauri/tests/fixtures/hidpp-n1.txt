@@ -1,0 +1,9 @@
+# Synthetic, hand-authored vectors, NOT captures from a mouse.
+# Provenance and field derivation: docs/native-transport.md.
+ping_request = 10 01 00 18 00 00 a5
+ping_reply = 10 01 00 18 02 00 a5
+feature_request = 11 01 00 08 10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+feature_reply = 11 01 00 08 04 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+notification = 11 01 04 00 28 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+error_v1 = 10 01 8f 00 18 01 00
+error_v2 = 11 01 ff 00 18 08 00 00 00 00 00 00 00 00 00 00 00 00 00 00

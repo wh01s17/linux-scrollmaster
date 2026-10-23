@@ -1,0 +1,28 @@
+# Native HID++ variant: no Solaar, no Python runtime. Local source tarball only.
+pkgname=linux-scrollmaster-native
+pkgver=0.1.0
+pkgrel=1
+pkgdesc='Independent configurator for the Logitech MX Master 3S (native HID++ backend)'
+arch=('x86_64')
+license=('GPL-3.0-or-later' 'CC-BY-NC-SA-4.0')
+depends=('gtk3' 'webkit2gtk-4.1' 'openssl' 'wayland' 'libxkbcommon' 'libayatana-appindicator' 'systemd')
+makedepends=('rust' 'nodejs' 'pnpm' 'base-devel' 'pkgconf')
+provides=('linux-scrollmaster')
+conflicts=('linux-scrollmaster')
+options=('!debug') # The release binary carries no debug symbols; skip the empty -debug package.
+source=("$pkgname-$pkgver.tar.gz")
+sha256sums=('SKIP') # Local development only; replace with checksum before release.
+build() {
+  cd "$srcdir/$pkgname-$pkgver"
+  pnpm install --frozen-lockfile
+  pnpm tauri build --no-bundle --features native-default
+}
+package() {
+  cd "$srcdir/$pkgname-$pkgver"
+  install -Dm755 src-tauri/target/release/linux-scrollmaster "$pkgdir/usr/bin/linux-scrollmaster"
+  install -Dm644 packaging/udev/70-linux-scrollmaster.rules "$pkgdir/usr/lib/udev/rules.d/70-linux-scrollmaster.rules"
+  install -Dm644 packaging/arch/linux-scrollmaster.desktop "$pkgdir/usr/share/applications/linux-scrollmaster.desktop"
+  install -Dm644 src-tauri/icons/icon.png "$pkgdir/usr/share/icons/hicolor/128x128/apps/linux-scrollmaster.png"
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/linux-scrollmaster/LICENSE"
+  install -Dm644 src/mouse3d/ASSETS-LICENSE.md "$pkgdir/usr/share/licenses/linux-scrollmaster/ASSETS-LICENSE.md"
+}

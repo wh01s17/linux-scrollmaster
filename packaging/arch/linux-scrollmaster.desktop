@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Linux ScrollMaster
+Comment=Configure your MX Master 3S
+Comment[es]=Configura tu MX Master 3S
+Exec=linux-scrollmaster
+Icon=linux-scrollmaster
+Terminal=false
+Categories=Settings;HardwareSettings;
+StartupWMClass=io.github.wh01s17.linux-scrollmaster
