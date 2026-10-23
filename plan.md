@@ -1778,8 +1778,8 @@ Pendiente: aceptación física del cambio de idioma de la bandeja.
 
 **Bandeja por StatusNotifierItem e icono propio (23 de octubre de 2026).** La
 bandeja usa el backend `ksni` de `tray-icon` (D-Bus) en lugar de AppIndicator,
-que en Linux no entrega clics. El panel solo informa activaciones sueltas, así que
-dos clics izquierdos en menos de 500 ms abren la ventana (`lifecycle::double_click`,
-con prueba). Icono nuevo (`src-tauri/icons/icon.svg`): un mouse con rueda y flechas
+que en Linux no entrega clics. Un clic izquierdo (activación SNI) abre la ventana: el panel
+de Omarchy (quickshell) se traga el segundo clic de un doble clic rápido, medido con
+`dbus-monitor`. Icono nuevo (`src-tauri/icons/icon.svg`): un mouse con rueda y flechas
 de desplazamiento, para no parecerse al de Tailwind; la barra lateral usa el mismo
-dibujo. Pendiente: aceptación física del doble clic en Waybar.
+dibujo. Pendiente: aceptación física del clic en la bandeja.

@@ -159,7 +159,7 @@ export const en: Messages = {
   'prefs.language': 'Language',
   'prefs.languageHint': 'Changes the language of the interface and the tray menu.',
   'prefs.tray': 'Keep running in the tray when the window closes',
-  'prefs.trayHint': 'Optional. Keeps profiles, buttons and gestures active without the window. To quit, use “Quit Linux ScrollMaster” in the tray menu. Double-click the tray icon, or open Linux ScrollMaster again, to bring the window back.',
+  'prefs.trayHint': 'Optional. Keeps profiles, buttons and gestures active without the window. To quit, use “Quit Linux ScrollMaster” in the tray menu. Click the tray icon, or open Linux ScrollMaster again, to bring the window back.',
   'prefs.trayNote': 'Needs a panel with a tray. If the icon does not appear, open Linux ScrollMaster again and turn this option off. It does not enable autostart.',
   'prefs.autostart': 'Open Linux ScrollMaster at login',
   'prefs.autostartHint': 'Optional. Opens the window when you log in; profiles and actions come back only if you already enabled them. Turning it off prevents the next start and does not close Linux ScrollMaster.',

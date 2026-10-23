@@ -1,6 +1,5 @@
 //! Optional tray. Closing keeps the controller alive only after explicit opt-in.
 use serde_json::{json, Value};
-use std::time::{Duration, Instant};
 use std::{
     fs,
     io::Read,
@@ -15,20 +14,6 @@ use tauri::{
     tray::{MouseButton, TrayIconBuilder, TrayIconEvent},
     Manager,
 };
-
-/// Two left clicks closer than this open the window. The panel only reports
-/// single activations, so the pair is detected here.
-const DOUBLE_CLICK: Duration = Duration::from_millis(500);
-/// True when `now` completes a double click; otherwise remembers it as the first.
-fn double_click(last: &mut Option<Instant>, now: Instant) -> bool {
-    match last.take() {
-        Some(first) if now.duration_since(first) <= DOUBLE_CLICK => true,
-        _ => {
-            *last = Some(now);
-            false
-        }
-    }
-}
 
 pub struct DesktopState {
     enabled: AtomicBool,
@@ -116,19 +101,15 @@ fn create_tray(app: &tauri::AppHandle) -> Result<(), String> {
             "quit" => app.exit(0),
             _ => (),
         })
-        .on_tray_icon_event({
-            let last = Mutex::new(None);
-            move |tray, event| {
-                if let TrayIconEvent::Click {
-                    button: MouseButton::Left,
-                    ..
-                } = event
-                {
-                    let mut last = last.lock().unwrap_or_else(|e| e.into_inner());
-                    if double_click(&mut last, Instant::now()) {
-                        show_window(tray.app_handle());
-                    }
-                }
+        // The panel sends one activation per click, and swallows the second click
+        // of a fast double click: open on any left activation.
+        .on_tray_icon_event(|tray, event| {
+            if let TrayIconEvent::Click {
+                button: MouseButton::Left,
+                ..
+            } = event
+            {
+                show_window(tray.app_handle());
             }
         })
         .build(app)
@@ -220,20 +201,6 @@ mod tests {
                 NEXT.fetch_add(1, Ordering::SeqCst)
             ))
             .join("desktop.json")
-    }
-    #[test]
-    fn two_quick_clicks_open_and_a_slow_pair_does_not() {
-        let start = Instant::now();
-        let mut last = None;
-        assert!(!double_click(&mut last, start));
-        assert!(double_click(&mut last, start + Duration::from_millis(300)));
-        // A third click starts a new pair instead of reopening at once.
-        assert!(!double_click(&mut last, start + Duration::from_millis(400)));
-        assert!(!double_click(
-            &mut last,
-            start + Duration::from_millis(1200)
-        ));
-        assert!(double_click(&mut last, start + Duration::from_millis(1600)));
     }
     #[test]
     fn tray_defaults_off_and_roundtrips_without_touching_profiles() {

@@ -170,7 +170,7 @@ export const es = {
   'prefs.language': 'Idioma',
   'prefs.languageHint': 'Cambia el idioma de la interfaz y del menú de la bandeja.',
   'prefs.tray': 'Continuar en la bandeja al cerrar la ventana',
-  'prefs.trayHint': 'Opcional. Mantiene perfiles, botones y gestos activos sin la ventana. Para terminar usa «Salir de Linux ScrollMaster» en el menú de la bandeja. Doble clic en el icono de la bandeja o abrir Linux ScrollMaster de nuevo recupera la ventana.',
+  'prefs.trayHint': 'Opcional. Mantiene perfiles, botones y gestos activos sin la ventana. Para terminar usa «Salir de Linux ScrollMaster» en el menú de la bandeja. Un clic en el icono de la bandeja o abrir Linux ScrollMaster de nuevo recupera la ventana.',
   'prefs.trayNote': 'Requiere un panel con bandeja. Si no aparece el icono, vuelve a abrir Linux ScrollMaster y desactiva esta opción. No activa el inicio automático.',
   'prefs.autostart': 'Abrir Linux ScrollMaster al iniciar sesión',
   'prefs.autostartHint': 'Voluntario. Abre la ventana al entrar a tu escritorio; los perfiles y acciones se recuperan solo si ya los habilitaste. Desmarcar evita el próximo inicio y no cierra Linux ScrollMaster.',

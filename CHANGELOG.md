@@ -6,6 +6,8 @@ All notable changes to Linux ScrollMaster are documented here. The format follow
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-10-23
+
 First public release.
 
 ### Added
@@ -25,8 +27,9 @@ First public release.
 - English and Spanish interface, chosen in **Preferences**; without a saved choice
   the app follows the system language, and the tray menu uses the same language.
 - Interactive 3D mouse, light and dark themes, scaling for 4K screens, optional tray
-  (double-click its icon to bring the window back) and autostart.
+  (click its icon to bring the window back) and autostart.
 - Packages for Arch Linux, Debian/Ubuntu, Fedora and AppImage, built in CI, with a
   udev rule limited to the receiver's HID++ interface.
 
-[Unreleased]: https://github.com/wh01s17/linux-scrollmaster/commits/main
+[Unreleased]: https://github.com/wh01s17/linux-scrollmaster/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/wh01s17/linux-scrollmaster/releases/tag/v0.1.0
