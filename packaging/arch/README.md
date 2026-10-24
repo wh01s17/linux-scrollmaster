@@ -1,6 +1,6 @@
 # Empaquetado Arch (preparación, no publicación)
 
-La receta usa un tarball local linux-scrollmaster-0.1.2.tar.gz con carpeta raíz linux-scrollmaster-0.1.2.
+La receta usa un tarball local linux-scrollmaster-0.2.0.tar.gz con carpeta raíz linux-scrollmaster-0.2.0.
 Una vez revisado y versionado el código, genera una exportación limpia de los
 archivos mantenidos; nunca uses `tar` indiscriminadamente sobre el workspace.
 

@@ -6,6 +6,8 @@ All notable changes to Linux ScrollMaster are documented here. The format follow
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-24
+
 ### Added
 
 - Scroll distance on Hyprland: a slider and exact factor (0.1–5) in both wheel tabs,
@@ -62,7 +64,8 @@ First public release.
 - Packages for Arch Linux, Debian/Ubuntu, Fedora and AppImage, built in CI, with a
   udev rule limited to the receiver's HID++ interface.
 
-[Unreleased]: https://github.com/wh01s17/linux-scrollmaster/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/wh01s17/linux-scrollmaster/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/wh01s17/linux-scrollmaster/compare/v0.1.2...v0.2.0
 [0.1.2]: https://github.com/wh01s17/linux-scrollmaster/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/wh01s17/linux-scrollmaster/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/wh01s17/linux-scrollmaster/releases/tag/v0.1.0
