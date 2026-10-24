@@ -6,6 +6,16 @@ All notable changes to Linux ScrollMaster are documented here. The format follow
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-10-24
+
+### Fixed
+
+- With "keep running in the tray" enabled, closing the window opened by autostart
+  quit the app instead of hiding it. At login the app could start before the panel's
+  tray host, so creating the icon failed and the preference was ignored until the
+  next launch. The app now keeps the preference, retries the icon for two minutes
+  and once more on close.
+
 ## [0.1.1] - 2026-10-24
 
 ### Fixed
@@ -45,6 +55,7 @@ First public release.
 - Packages for Arch Linux, Debian/Ubuntu, Fedora and AppImage, built in CI, with a
   udev rule limited to the receiver's HID++ interface.
 
-[Unreleased]: https://github.com/wh01s17/linux-scrollmaster/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/wh01s17/linux-scrollmaster/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/wh01s17/linux-scrollmaster/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/wh01s17/linux-scrollmaster/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/wh01s17/linux-scrollmaster/releases/tag/v0.1.0
