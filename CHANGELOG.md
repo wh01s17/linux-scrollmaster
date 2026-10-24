@@ -6,6 +6,20 @@ All notable changes to Linux ScrollMaster are documented here. The format follow
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-10-24
+
+### Fixed
+
+- Autostart no longer registers a development build (`pnpm tauri dev`). Such a build
+  loads its interface from the Vite dev server, so after a reboot the window showed
+  "Could not connect to localhost: Connection refused". A development build can now
+  only disable an existing entry; enable autostart from the installed app.
+
+### Changed
+
+- README: download packages before installing them, with step-by-step update
+  instructions per distribution.
+
 ## [0.1.0] - 2026-10-23
 
 First public release.
@@ -31,5 +45,6 @@ First public release.
 - Packages for Arch Linux, Debian/Ubuntu, Fedora and AppImage, built in CI, with a
   udev rule limited to the receiver's HID++ interface.
 
-[Unreleased]: https://github.com/wh01s17/linux-scrollmaster/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/wh01s17/linux-scrollmaster/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/wh01s17/linux-scrollmaster/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/wh01s17/linux-scrollmaster/releases/tag/v0.1.0
