@@ -35,6 +35,14 @@ una primera creación usa enlace duro sin sobrescribir el destino. Las actualiza
 propias usan rename. Se lee de nuevo tras escribir o borrar. La serialización cubre
 el IPC propio; no coordina editores externos concurrentes.
 
+Una compilación de desarrollo (`pnpm tauri dev`, sin la feature `custom-protocol`)
+carga la interfaz desde el `devUrl` de Vite (`localhost:1420`). Si se registra para
+el inicio automático, al iniciar sesión Vite no está corriendo y la ventana muestra
+«Could not connect to localhost: Connection refused». Por eso, con `tauri::is_dev()`
+Rust rechaza activar o reubicar la entrada, no ofrece «Usar esta instalación» y solo
+permite desactivar una entrada existente. La activación se hace desde el binario
+instalado (`/usr/bin/linux-scrollmaster`) o desde una compilación `pnpm tauri build`.
+
 El filesystem debe permitir esa publicación con enlaces duros. Se rechazan rutas
 relativas, no UTF-8, con controles, `=` o `%`; el lector GIO no aceptó de forma fiable
 el ejecutable con `%` en la prueba de compatibilidad. Se prueban espacios, Unicode,

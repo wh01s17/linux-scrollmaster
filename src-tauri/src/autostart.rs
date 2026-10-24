@@ -11,6 +11,8 @@ use std::{
 const HEADER: &str = "# Managed by Linux ScrollMaster: autostart v1\n# Executable: ";
 const FILENAME: &str = "io.github.wh01s17.linux-scrollmaster.autostart.desktop";
 const MAX_BYTES: u64 = 8192;
+// `tauri dev` binaries load the UI from the Vite devUrl, which is absent at login.
+const DEV_BUILD: &str = "Esta compilación de desarrollo carga la interfaz desde el servidor Vite y no puede iniciarse con la sesión. Usa Linux ScrollMaster instalado para activar el inicio automático";
 static LOCK: Mutex<()> = Mutex::new(());
 
 fn location() -> Result<PathBuf, String> {
@@ -160,13 +162,24 @@ fn change(path: &Path, executable: &Path, enabled: bool) -> Result<Value, String
     Ok(result)
 }
 
+/// A development build may only retire an entry; it never points one at itself.
+fn for_build(mut value: Value, dev: bool) -> Value {
+    if dev && value["error"].is_null() {
+        value["can_change"] = value["enabled"].clone();
+        value["needs_update"] = json!(false);
+        value["error"] = json!(DEV_BUILD);
+    }
+    value
+}
+
 fn describe() -> Value {
     let result = location().and_then(|path| {
         let executable = std::env::current_exe().map_err(|e| e.to_string())?;
         status(&path, &executable)
     });
-    result.unwrap_or_else(
+    result.map_or_else(
         |error| json!({"enabled":false,"can_change":false,"needs_update":false,"error":error}),
+        |value| for_build(value, tauri::is_dev()),
     )
 }
 
@@ -184,11 +197,15 @@ pub async fn autostart_preferences() -> Result<Value, String> {
 pub async fn set_autostart(enabled: bool) -> Result<Value, String> {
     tauri::async_runtime::spawn_blocking(move || {
         let _guard = LOCK.lock().map_err(|_| "Preferencia ocupada")?;
+        if enabled && tauri::is_dev() {
+            return Err(DEV_BUILD.to_string());
+        }
         change(
             &location()?,
             &std::env::current_exe().map_err(|e| e.to_string())?,
             enabled,
         )
+        .map(|value| for_build(value, tauri::is_dev()))
     })
     .await
     .map_err(|e| e.to_string())?
@@ -374,6 +391,24 @@ mod tests {
                 .commandline()
                 .is_some());
         }
+    }
+
+    #[test]
+    fn development_build_can_only_disable_and_never_offers_relocation() {
+        let fixture = Fixture::new();
+        let path = fixture.path();
+        let old = fixture.executable("installed");
+        let dev = fixture.executable("debug");
+        let off = for_build(status(&path, &dev).unwrap(), true);
+        assert_eq!(off["can_change"], false);
+        assert_eq!(off["error"], DEV_BUILD);
+        change(&path, &old, true).unwrap();
+        let on = for_build(status(&path, &dev).unwrap(), true);
+        assert_eq!(on["can_change"], true);
+        assert_eq!(on["needs_update"], false);
+        let release = for_build(status(&path, &dev).unwrap(), false);
+        assert_eq!(release["needs_update"], true);
+        assert!(release["error"].is_null());
     }
 
     #[test]
