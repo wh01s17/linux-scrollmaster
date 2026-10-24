@@ -6,6 +6,7 @@ mod instance;
 mod lifecycle;
 mod locale;
 mod profile_files;
+mod scroll_speed;
 use std::{
     sync::{
         atomic::{AtomicU64, Ordering},
@@ -118,7 +119,9 @@ fn main() {
             lifecycle::set_tray,
             autostart::autostart_preferences,
             autostart::set_autostart,
-            locale::set_locale
+            locale::set_locale,
+            scroll_speed::scroll_speed_preferences,
+            scroll_speed::set_scroll_speed
         ])
         .setup(move |app| {
             // Keep the lease until native exit cleanup has completed.
@@ -132,6 +135,7 @@ fn main() {
                 }
             });
             lifecycle::initialize(app.handle());
+            scroll_speed::keep_applied();
             // Native polling continues when WebKit throttles a hidden/minimized window.
             // No autostart, daemon installation or compositor configuration is needed.
             let handle = app.handle().clone();
@@ -152,8 +156,7 @@ fn main() {
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                 // Hide only with a visible tray to bring the window back; a host that
                 // came up after login gets its icon now.
-                if lifecycle::ensure_tray(window.app_handle()) && window.hide().is_ok()
-                {
+                if lifecycle::ensure_tray(window.app_handle()) && window.hide().is_ok() {
                     api.prevent_close();
                 }
             }

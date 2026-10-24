@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
+import { invoke, isTauri } from '@tauri-apps/api/core';
 import { useDevice } from './device';
 import ProfileManager from './components/ProfileManager.vue';
 import GestureEditor from './components/GestureEditor.vue';
@@ -7,10 +8,16 @@ import DesktopPreferences from './components/DesktopPreferences.vue';
 import ButtonAssignment from './components/ButtonAssignment.vue';
 import { batteryView } from './battery';
 import MouseFigure from './components/MouseFigure.vue';
+import ScrollSpeed from './components/ScrollSpeed.vue';
+import { createScrollSpeed } from './scrollSpeed';
 import { locale, t, tr } from './i18n';
 const device = useDevice();
 const { data, selected, busy, error, message, mouse, request, set } = device;
+// Desktop setting (Hyprland), separate from HID state; shared by both wheel tabs.
+const scrollSpeed = createScrollSpeed((command, args) => invoke(command, args), isTauri());
+onMounted(scrollSpeed.load);
 const zone = ref('pointer'); const dark = ref(localStorage.getItem('linux-scrollmaster-theme') !== 'light');
+watch(zone, z => { if (z === 'wheel' || z === 'thumb') void scrollSpeed.load(); });
 const keySample = ref('');
 const shortcutSample = ref('');
 function testModifier(event: KeyboardEvent) {
@@ -104,11 +111,13 @@ function theme() { dark.value = !dark.value; localStorage.setItem('linux-scrollm
               <input id="shift" type="range" min="1" max="50" :value="value('smart-shift') ?? 10" :disabled="!available('smart-shift') || value('scroll-ratchet') === 1" @change="numberChange('smart-shift', $event)">
               <div class="range-labels"><span>{{ t('wheel.earlier') }}</span><span>{{ t('wheel.always') }}</span></div>
               <label class="toggle-row">{{ t('wheel.invert') }}<input type="checkbox" :checked="!!value('hires-smooth-invert')" :disabled="!available('hires-smooth-invert')" @change="toggle('hires-smooth-invert', $event)"></label>
+              <ScrollSpeed :state="scrollSpeed" />
               <label class="toggle-row">{{ t('wheel.hires') }}<input type="checkbox" :checked="!!value('hires-smooth-resolution')" :disabled="!available('hires-smooth-resolution')" @change="toggle('hires-smooth-resolution', $event)"></label>
             </template>
             <template v-if="zone === 'thumb'">
               <p>{{ t('thumb.intro') }}</p>
               <label class="toggle-row">{{ t('thumb.invert') }}<input type="checkbox" :checked="!!value('thumb-scroll-invert')" :disabled="!available('thumb-scroll-invert')" @change="toggle('thumb-scroll-invert', $event)"></label>
+              <ScrollSpeed :state="scrollSpeed" />
               <p class="tip">{{ t('thumb.tip') }}</p>
             </template>
             <template v-if="zone === 'buttons'">

@@ -54,6 +54,7 @@ mouse, no se da por aplicado.
 | Recuperación tras apagar el mouse, suspender o cerrar la app de forma abrupta | Probado: ninguna tecla queda pegada |
 | Atajos personalizados, maximizar/pantalla completa en Hyprland | Implementado; aceptación física pendiente |
 | Bandeja e inicio automático al iniciar sesión | Implementado; aceptación gráfica pendiente |
+| Distancia de desplazamiento por paso (solo Hyprland, vía compositor) | Implementado; aceptación gráfica pendiente ([docs](docs/scroll-speed.md)) |
 | Bluetooth | Detección implementada; **sin probar** |
 | Otros modelos o varios receptores | Fuera de alcance por ahora: no hay hardware para probarlos |
 

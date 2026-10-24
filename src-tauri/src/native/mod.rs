@@ -27,6 +27,7 @@ mod profile_guardian_wire;
 mod profile_owner;
 mod recovery;
 mod runner;
+mod scroll_factor;
 mod settings;
 
 pub use access::{ensure_no_controllers, HardwareLease};
@@ -54,6 +55,9 @@ pub use profile_owner::NativeProfileOwner;
 pub use recovery::ReportingRecovery;
 pub use runner::{run_bounded, run_bounded_settings};
 pub use settings::{apply_changes, validate_changes, ApplyError};
+pub mod scroll {
+    pub use super::scroll_factor::{apply, normalize, read, reset, same, ScrollDevice, MAX, MIN};
+}
 
 #[cfg(test)]
 mod buttons_tests;

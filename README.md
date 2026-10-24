@@ -54,6 +54,7 @@ assumed to be applied.
 | Recovery after turning the mouse off, suspend, or an abrupt app exit | Tested: no key stays stuck |
 | Custom shortcuts, maximize/fullscreen on Hyprland | Implemented; physical acceptance pending |
 | Tray and autostart at login | Implemented; acceptance pending |
+| Scroll distance per step (Hyprland only, via compositor) | Implemented; acceptance pending ([docs](docs/scroll-speed.md)) |
 | Bluetooth | Detection implemented; **untested** |
 | Other models or several receivers | Out of scope for now: no hardware to test them |
 

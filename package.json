@@ -7,7 +7,7 @@
     "dev": "vite --host 127.0.0.1",
     "build": "vue-tsc --noEmit && vite build",
     "tauri": "tauri",
-    "test": "python -m unittest discover -s tests -v && node --experimental-strip-types tests/device-state.test.ts && node --experimental-strip-types tests/gesture-distance.test.ts && node --experimental-strip-types tests/shortcuts.test.ts && node --experimental-strip-types tests/shortcut-components.test.mjs && node --experimental-strip-types tests/desktop-preferences.test.ts && node --experimental-strip-types tests/battery.test.ts && node --experimental-strip-types tests/turntable.test.ts && node --experimental-strip-types tests/i18n.test.ts"
+    "test": "python -m unittest discover -s tests -v && node --experimental-strip-types tests/device-state.test.ts && node --experimental-strip-types tests/gesture-distance.test.ts && node --experimental-strip-types tests/shortcuts.test.ts && node --experimental-strip-types tests/shortcut-components.test.mjs && node --experimental-strip-types tests/desktop-preferences.test.ts && node --experimental-strip-types tests/scroll-speed.test.ts && node --experimental-strip-types tests/battery.test.ts && node --experimental-strip-types tests/turntable.test.ts && node --experimental-strip-types tests/i18n.test.ts"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.0.0",

@@ -6,6 +6,13 @@ All notable changes to Linux ScrollMaster are documented here. The format follow
 
 ## [Unreleased]
 
+### Added
+
+- Scroll distance on Hyprland: a slider and exact factor (0.1–5) in both wheel tabs,
+  applied per device to the MX Master through Hyprland IPC and confirmed by reading it
+  back. It never edits Hyprland files, is reapplied after a config reload, and
+  **Reset** returns to the session's global value. Hidden on other desktops.
+
 ## [0.1.2] - 2026-10-24
 
 ### Fixed

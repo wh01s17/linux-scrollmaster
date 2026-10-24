@@ -60,7 +60,15 @@ export const es = {
   // Thumb wheel
   'thumb.intro': 'Desplázate horizontalmente con el pulgar.',
   'thumb.invert': 'Invertir dirección',
-  'thumb.tip': 'La velocidad depende de la aplicación y del escritorio. Las acciones alternativas de esta rueda están pendientes.',
+  'thumb.tip': 'En Hyprland la distancia por paso se ajusta aquí; en otros escritorios depende del compositor. Las acciones alternativas de esta rueda están pendientes.',
+  'scroll.title': 'Distancia de desplazamiento',
+  'scroll.less': 'Menos por paso',
+  'scroll.more': 'Más por paso',
+  'scroll.exact': 'Factor exacto',
+  'scroll.reset': 'Restablecer',
+  'scroll.hint': 'Hyprland · {min}–{max} · se aplica a ambas ruedas del MX Master, sin editar tus archivos de configuración.',
+  'scroll.invalid': 'Usa un factor entre {min} y {max}.',
+  'scroll.readError': 'No se pudo leer la distancia de desplazamiento.',
   // Buttons
   'buttons.intro': 'Elige una función del mouse o una acción de teclado para cada botón.',
   'buttons.try': 'Probar asignaciones',

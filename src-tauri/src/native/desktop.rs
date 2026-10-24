@@ -107,7 +107,7 @@ pub(super) fn environment_path() -> Result<PathBuf, String> {
         .map_err(|_| "Missing Hyprland instance signature")?;
     session_path(Path::new(&runtime), &signature)
 }
-fn supported_version(value: &str) -> bool {
+pub(super) fn supported_version(value: &str) -> bool {
     let value = value.strip_prefix('v').unwrap_or(value);
     let Some(rest) = value
         .strip_prefix("0.55.")
@@ -126,7 +126,7 @@ fn supported_version(value: &str) -> bool {
                     .all(|b| b.is_ascii_alphanumeric() || b == b'.' || b == b'-')
         })
 }
-fn require_ok(reply: &[u8]) -> Result<(), String> {
+pub(super) fn require_ok(reply: &[u8]) -> Result<(), String> {
     if reply.trim_ascii() == b"ok" {
         Ok(())
     } else {
