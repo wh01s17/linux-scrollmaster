@@ -134,21 +134,61 @@ pub fn show_window(app: &tauri::AppHandle) {
         let _ = window.set_focus();
     }
 }
-pub fn initialize(app: &tauri::AppHandle) {
-    let result = path().and_then(|p| load(&p)).and_then(|enabled| {
-        if enabled {
-            create_tray(app)?;
+fn record(app: &tauri::AppHandle, error: Option<String>) {
+    *app.state::<DesktopState>()
+        .error
+        .lock()
+        .unwrap_or_else(|e| e.into_inner()) = error;
+}
+/// Show the opted-in tray if it is missing. Main thread only. At login the panel may
+/// not have registered its StatusNotifierWatcher yet, so a first attempt can fail.
+pub(crate) fn ensure_tray(app: &tauri::AppHandle) -> bool {
+    if !app.state::<DesktopState>().keep_running() {
+        return false;
+    }
+    match create_tray(app) {
+        Ok(()) => {
+            record(app, None);
+            true
         }
-        app.state::<DesktopState>()
-            .enabled
-            .store(enabled, Ordering::SeqCst);
-        Ok(())
+        Err(error) => {
+            record(app, Some(error));
+            false
+        }
+    }
+}
+/// Wait for a tray host that appears after us (autostart races the panel).
+fn retry_tray(app: tauri::AppHandle) {
+    std::thread::spawn(move || {
+        for _ in 0..TRAY_RETRIES {
+            std::thread::sleep(TRAY_RETRY_DELAY);
+            let (tx, rx) = mpsc::channel();
+            let handle = app.clone();
+            let sent = app.run_on_main_thread(move || {
+                let state = handle.state::<DesktopState>();
+                let done = !state.keep_running() || ensure_tray(&handle);
+                let _ = tx.send(done);
+            });
+            if sent.is_err() || rx.recv().unwrap_or(true) {
+                return;
+            }
+        }
     });
-    if let Err(error) = result {
-        *app.state::<DesktopState>()
-            .error
-            .lock()
-            .unwrap_or_else(|e| e.into_inner()) = Some(error);
+}
+const TRAY_RETRIES: u32 = 60;
+const TRAY_RETRY_DELAY: std::time::Duration = std::time::Duration::from_secs(2);
+pub fn initialize(app: &tauri::AppHandle) {
+    match path().and_then(|p| load(&p)) {
+        Ok(enabled) => {
+            // The preference stands even if the tray host is not up yet.
+            app.state::<DesktopState>()
+                .enabled
+                .store(enabled, Ordering::SeqCst);
+            if enabled && !ensure_tray(app) {
+                retry_tray(app.clone());
+            }
+        }
+        Err(error) => record(app, Some(error)),
     }
 }
 #[tauri::command]

@@ -150,12 +150,9 @@ fn main() {
         })
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
-                if window.state::<lifecycle::DesktopState>().keep_running()
-                    && window
-                        .app_handle()
-                        .tray_by_id("linux-scrollmaster")
-                        .is_some()
-                    && window.hide().is_ok()
+                // Hide only with a visible tray to bring the window back; a host that
+                // came up after login gets its icon now.
+                if lifecycle::ensure_tray(window.app_handle()) && window.hide().is_ok()
                 {
                     api.prevent_close();
                 }

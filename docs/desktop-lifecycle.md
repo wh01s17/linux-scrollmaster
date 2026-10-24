@@ -22,6 +22,18 @@ el [inicio automático voluntario](autostart.md) posterior tiene su propio inter
 
 Un panel sin soporte de bandeja puede no mostrar el icono aunque la biblioteca lo
 cree: abrir Linux ScrollMaster de nuevo recupera la ventana y permite desactivar la opción.
+Al iniciar sesión el autostart puede adelantarse al panel: en Omarchy la ventana se
+abrió ~0,7 s antes de que quickshell registrara `org.kde.StatusNotifierWatcher`, y crear
+el icono falló («failed to register to the StatusNotifierWatcher»). Antes ese error
+dejaba la preferencia como inactiva y cerrar la ventana terminaba el proceso. Ahora
+`lifecycle::initialize` conserva la preferencia leída aunque el icono falle, reintenta
+crearlo cada 2 s durante 2 minutos en el hilo principal y, al cerrar, vuelve a
+intentarlo antes de decidir. Solo se oculta la ventana si el icono quedó creado; sin
+panel, cerrar sigue terminando el proceso para no dejarlo invisible. Verificado con un
+bus D-Bus aislado (`dbus-run-session`), backend sin hardware y un watcher mínimo que
+aparece 5 s después: el icono se registró, cerrar ocultó la ventana y el proceso siguió
+vivo. Sin watcher, cerrar terminó el proceso como antes.
+
 No se promete que el panel exista. Linux ofrece el menú, no eventos universales de
 clic izquierdo. Dependencia de runtime añadida a Arch: libayatana-appindicator.
 Se habilita la característica tray-icon de Tauri ya disponible en caché.
