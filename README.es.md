@@ -93,14 +93,14 @@ El detalle de lo comprobado y lo pendiente está en el
 ## Instalación
 
 Los paquetes de cada versión están en [Releases](https://github.com/wh01s17/linux-scrollmaster/releases),
-compilados con el backend nativo. Los comandos usan la versión **0.2.0**; para una
+compilados con el backend nativo. Los comandos usan la versión **0.2.1**; para una
 versión posterior cambia el número en la URL y en el nombre del archivo.
 
 ### Arch Linux, Manjaro, EndeavourOS, Omarchy
 
 ```sh
-curl -fLO https://github.com/wh01s17/linux-scrollmaster/releases/download/v0.2.0/linux-scrollmaster-native-0.2.0-1-x86_64.pkg.tar.zst
-sudo pacman -U ./linux-scrollmaster-native-0.2.0-1-x86_64.pkg.tar.zst
+curl -fLO https://github.com/wh01s17/linux-scrollmaster/releases/download/v0.2.1/linux-scrollmaster-native-0.2.1-1-x86_64.pkg.tar.zst
+sudo pacman -U ./linux-scrollmaster-native-0.2.1-1-x86_64.pkg.tar.zst
 ```
 
 Este es el paquete probado con el mouse. Descárgalo primero: si instalas directo desde
@@ -109,26 +109,26 @@ la URL, pacman pide una firma `.sig`, y los paquetes no están firmados.
 ### Debian, Ubuntu 22.04 o superior, Linux Mint, Pop!_OS
 
 ```sh
-curl -fLO https://github.com/wh01s17/linux-scrollmaster/releases/download/v0.2.0/linux-scrollmaster_0.2.0_amd64.deb
-sudo apt install ./linux-scrollmaster_0.2.0_amd64.deb
+curl -fLO https://github.com/wh01s17/linux-scrollmaster/releases/download/v0.2.1/linux-scrollmaster_0.2.1_amd64.deb
+sudo apt install ./linux-scrollmaster_0.2.1_amd64.deb
 ```
 
 ### Fedora y derivadas
 
 ```sh
-curl -fLO https://github.com/wh01s17/linux-scrollmaster/releases/download/v0.2.0/linux-scrollmaster-0.2.0-1.x86_64.rpm
-sudo dnf install ./linux-scrollmaster-0.2.0-1.x86_64.rpm
+curl -fLO https://github.com/wh01s17/linux-scrollmaster/releases/download/v0.2.1/linux-scrollmaster-0.2.1-1.x86_64.rpm
+sudo dnf install ./linux-scrollmaster-0.2.1-1.x86_64.rpm
 ```
 
 ### Cualquier distribución (AppImage)
 
 ```sh
-curl -fLO https://github.com/wh01s17/linux-scrollmaster/releases/download/v0.2.0/linux-scrollmaster_0.2.0_amd64.AppImage
-chmod +x linux-scrollmaster_0.2.0_amd64.AppImage
+curl -fLO https://github.com/wh01s17/linux-scrollmaster/releases/download/v0.2.1/linux-scrollmaster_0.2.1_amd64.AppImage
+chmod +x linux-scrollmaster_0.2.1_amd64.AppImage
 curl -fsSLO https://raw.githubusercontent.com/wh01s17/linux-scrollmaster/main/packaging/udev/70-linux-scrollmaster.rules
 sudo install -Dm644 70-linux-scrollmaster.rules /usr/lib/udev/rules.d/70-linux-scrollmaster.rules
 sudo udevadm control --reload
-./linux-scrollmaster_0.2.0_amd64.AppImage
+./linux-scrollmaster_0.2.1_amd64.AppImage
 ```
 
 La AppImage no instala la regla udev; por eso van los tres comandos del medio, una
@@ -151,7 +151,7 @@ sesiones remotas.
 Cada release incluye `SHA256SUMS`. En la carpeta donde descargaste el paquete:
 
 ```sh
-curl -fLO https://github.com/wh01s17/linux-scrollmaster/releases/download/v0.2.0/SHA256SUMS
+curl -fLO https://github.com/wh01s17/linux-scrollmaster/releases/download/v0.2.1/SHA256SUMS
 sha256sum --check --ignore-missing SHA256SUMS
 ```
 

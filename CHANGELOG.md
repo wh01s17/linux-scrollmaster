@@ -6,6 +6,15 @@ All notable changes to Linux ScrollMaster are documented here. The format follow
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-10-26
+
+### Fixed
+
+- Directional gestures could require repeated presses because periodic device
+  reads cancelled physical-distance gestures even when DPI had not changed.
+  Gestures now survive unchanged reads, including presses received during a
+  query, while DPI changes and failed reads still discard unconfirmed actions.
+
 ## [0.2.0] - 2026-10-24
 
 ### Added
@@ -64,7 +73,8 @@ First public release.
 - Packages for Arch Linux, Debian/Ubuntu, Fedora and AppImage, built in CI, with a
   udev rule limited to the receiver's HID++ interface.
 
-[Unreleased]: https://github.com/wh01s17/linux-scrollmaster/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/wh01s17/linux-scrollmaster/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/wh01s17/linux-scrollmaster/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/wh01s17/linux-scrollmaster/compare/v0.1.2...v0.2.0
 [0.1.2]: https://github.com/wh01s17/linux-scrollmaster/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/wh01s17/linux-scrollmaster/compare/v0.1.0...v0.1.1
