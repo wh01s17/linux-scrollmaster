@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
+#[path = "actions_refresh_tests.rs"]
+mod refresh_tests;
 use super::*;
 use serde_json::json;
 use std::{cell::RefCell, rc::Rc};

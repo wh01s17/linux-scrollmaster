@@ -619,6 +619,32 @@ fn resident_raw_xy_dispatches_a_gesture_and_restores_both_owned_flags() {
     assert!(f.log.borrow().iter().any(|s| s == "wire:195:34"));
 }
 #[test]
+fn resident_physical_gesture_survives_periodic_snapshots_without_reactivation() {
+    let mut f = Fixture::new(Faults::default());
+    f.activate(
+        json!({"195":{"type":"gestures","units":"tenths-mm","threshold":10,
+        "actions":{"up":null,"down":null,"left":null,"right":"shortcut:paste","click":null}}}),
+    );
+    let activations = f.count("wire:195:51");
+    f.emit(&[]).unwrap();
+    f.emit(&[195]).unwrap();
+    f.idle.borrow_mut().push_back(initial_raw());
+    f.backend.poll(Duration::from_millis(5)).unwrap();
+    for _ in 0..4 {
+        let snapshot = f.backend.snapshot(deadline()).unwrap();
+        assert_eq!(snapshot["native_capture"]["active"], true);
+    }
+    f.idle
+        .borrow_mut()
+        .push_back(frame(&[0x11, 1, 18, 0x10], &[0, 100, 0, 0]));
+    f.backend.poll(Duration::from_millis(5)).unwrap();
+    f.emit(&[]).unwrap();
+    assert_eq!(f.count("tap:(47, 4)"), 1);
+    assert_eq!(f.count("wire:195:51"), activations);
+    f.close();
+    assert_eq!(f.state.borrow().flags.get(&195), Some(&0));
+}
+#[test]
 fn unavailable_desktop_output_prevents_scalar_and_capture_writes() {
     let mut f = Fixture::new(Faults::default());
     let c = Changes::new(

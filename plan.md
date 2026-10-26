@@ -1,5 +1,12 @@
 # Linux ScrollMaster: plan de implementación y continuidad
 
+**Corrección del 26 de octubre de 2026:** el sondeo cancelaba gestos físicos
+incluso con DPI idénticos y descartaba nuevas pulsaciones durante la consulta.
+Se conserva el recorrido provisional y se confirma su salida tras validar el
+snapshot con los mismos DPI. Nueve regresiones nuevas; suites completas aprobadas
+(819 pruebas). El usuario confirmó que funciona bien tras la corrección. Diagnóstico, contrato
+y límites en [docs/gesture-polling.md](docs/gesture-polling.md).
+
 Última actualización: 21 de octubre de 2026, America/Santiago. La evidencia física
 conserva sus fechas originales. N1 aporta codec/transporte Rust, N2 ya está
 aceptado por Bolt y N3 añade seis setters y remapeo secundario, con aceptación ampliada

@@ -222,6 +222,44 @@ fn idle_and_query_delivery_share_synchronization_modifiers_and_gesture_state() {
     assert_eq!(f.events().last().unwrap(), "held:None");
 }
 #[test]
+fn unchanged_dpi_refresh_preserves_an_inflight_physical_gesture() {
+    let mut f = Fixture::new(json!({"195":gesture(true)}), Default::default(), false);
+    f.buttons(&[]);
+    f.buttons(&[195]);
+    f.motion(2, 0);
+    // Several quiet periodic reads must not require releasing and pressing again.
+    for _ in 0..4 {
+        f.refresh();
+    }
+    f.motion(100, 0);
+    f.buttons(&[]);
+    assert_eq!(f.events(), ["tap:(47, 4)"]);
+}
+#[test]
+fn physical_gestures_during_an_unchanged_dpi_refresh_are_not_lost() {
+    let mut f = Fixture::new(
+        json!({"83":"shortcut:copy","195":gesture(true)}),
+        [(
+            (0, 1, 2),
+            vec![
+                notification(&[195, 83]),
+                initial_raw(),
+                frame(&[0x11, 1, 18, 0x10], &[0, 100, 0, 0]),
+                notification(&[]),
+                notification(&[195]),
+                initial_raw(),
+                frame(&[0x11, 1, 18, 0x10], &[0, 100, 0, 0]),
+                notification(&[]),
+            ],
+        )]
+        .into(),
+        false,
+    );
+    f.buttons(&[]);
+    f.refresh();
+    assert_eq!(f.events(), ["tap:(46, 4)", "tap:(47, 4)", "tap:(47, 4)"]);
+}
+#[test]
 fn physical_gestures_are_cancelled_across_dpi_queries_and_resume_only_on_a_fresh_press() {
     let mut f = Fixture::new(
         json!({"83":"shortcut:copy","195":gesture(true)}),

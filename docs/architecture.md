@@ -96,8 +96,9 @@ aun con errores de salida. [Teclado, limpieza y límites](native-keyboard.md).
 con salida al teclado tipado, supresión de botones mantenidos, cancelación y DPI.
 `events::EventSink` conecta el motor al consumidor único, con eventos tipados y
 cierre compartido mediante `SinkHandle`. El setup no entrega su FIFO al motor;
-las consultas invalidan DPI antes de procesar eventos intercalados y confirman el
-nuevo snapshot después de validar identidad/configuración. El guardián prepara
+las consultas conservan el recorrido físico provisional y retienen sus acciones
+hasta validar identidad/configuración y confirmar los mismos DPI; un cambio real
+descarta ese recorrido. [Corrección del sondeo](gesture-polling.md). El guardián prepara
 ese motor con asignaciones vacías en `--keyboard-check`; los fixtures sí inyectan
 acciones y prueban su cierre antes de restaurar. [Entrega, evidencia y límites](native-action-delivery.md).
 `native/activation.rs` añade captura optativa en el guardián, con registro opaco de

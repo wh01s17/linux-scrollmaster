@@ -25,8 +25,9 @@ historial en consultas de estado, refresh ni recuperación.
 
 Después del setup, cada notificación decodificada se entrega sincrónicamente desde
 el mismo `ReportConsumer` de `Session`. Los getters conservan ese consumidor.
-No hay cola de acciones, segundo lector, replay ni reintento de pulsaciones
-inciertas. Las reglas de límites y plazos de sesión siguen vigentes; una salida
+Los gestos físicos retienen temporalmente su salida durante getters para confirmar
+la escala; no hay segundo lector ni reintento de pulsaciones inciertas.
+Las reglas de límites y plazos de sesión siguen vigentes; una salida
 lenta no amplía el plazo del getter o del sondeo.
 
 La evidencia añade `sink_attached`, `sink_deliveries` y `sink_release_error`.
@@ -44,11 +45,14 @@ los controles mantenidos que podrían originarlo según sus capacidades. El moto
 solo acepta movimiento con fuente posible única 195. Una combinación ambigua
 cancela el gesto, evitando convertir su liberación en un click artificial.
 
-Antes de cada refresh se invalida la lectura DPI del motor. Eso cancela los
-gestos físicos actuales y suprime nuevas pulsaciones de 195 durante la consulta,
-hasta soltarlas. Los atajos laterales, modificadores y gestos en counts siguen
-recibiendo eventos. Tras validar identidad y la misma configuración de botones,
-el propietario entrega el snapshot actualizado; solo entonces confirma el refresh.
+Durante cada refresh se conserva el recorrido físico como provisional. Sus acciones
+se retienen (máximo 64) y se consumen una sola vez después de validar identidad,
+configuración de botones, capacidades y los mismos DPI. Si los DPI cambian, se
+descartan las acciones retenidas y se suprime el gesto mantenido hasta soltarlo.
+Los atajos laterales, modificadores y gestos en counts siguen recibiendo eventos
+sin esperar esa confirmación. El propietario confirma el refresh tras aceptar el
+snapshot. Esta política sustituye la cancelación incondicional de cada consulta
+del incremento inicial; [diagnóstico y evidencia](gesture-polling.md).
 Una lectura DPI ausente o inválida impide continuar gestos físicos; no se supone
 un DPI. El getter conserva la regla HID++ existente que permite el valor por
 defecto anunciado cuando el sensor informa cero. Una consulta de estado en caché

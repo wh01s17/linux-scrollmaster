@@ -9,6 +9,8 @@ use std::{
     time::{Duration, Instant},
 };
 
+const PENDING_GESTURE_ACTION_LIMIT: usize = 64;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum GestureDirection {
     Up,
@@ -332,6 +334,9 @@ pub(super) struct Runtime<O: Output> {
     closed: Option<Result<(), String>>,
     start: Instant,
     query_pending: bool,
+    // Provisional physical-gesture output, consumed only after a fresh snapshot
+    // confirms the same DPI. Side buttons continue to run synchronously.
+    pending_gesture_actions: Vec<TapAction>,
     /// From the last device snapshot; unknown until one is validated.
     skip_initial_raw: Option<bool>,
 }
@@ -378,6 +383,7 @@ impl<O: Output> Runtime<O> {
             closed: None,
             start: Instant::now(),
             query_pending: false,
+            pending_gesture_actions: Vec::new(),
             skip_initial_raw: None,
         })
     }
@@ -552,8 +558,8 @@ impl<O: Output> Runtime<O> {
         stroke.direction = Some(next);
         stroke.ax = 0.0;
         stroke.ay = 0.0;
-        if let Some(action) = config.actions[next.index()].as_ref() {
-            action.emit(self.output.as_mut().ok_or("Action output is closed")?)?;
+        if let Some(action) = config.actions[next.index()].clone() {
+            self.emit_gesture(action)?;
         }
         Ok(())
     }
@@ -581,12 +587,25 @@ impl<O: Output> Runtime<O> {
             direction,
         });
         if let Some(action) = config.actions[GestureDirection::Click.index()]
-            .as_ref()
+            .clone()
             .filter(|_| click)
         {
-            action.emit(self.output.as_mut().ok_or("Action output is closed")?)?;
+            self.emit_gesture(action)?;
         }
         Ok(())
+    }
+    fn emit_gesture(&mut self, action: TapAction) -> Result<(), String> {
+        if self.query_pending && self.bindings.gesture.as_ref().is_some_and(|g| g.physical) {
+            // A busy query cannot grow delayed output without bound.
+            // Uncertain/failed snapshots never flush this queue.
+            if self.pending_gesture_actions.len() >= PENDING_GESTURE_ACTION_LIMIT {
+                return Err("Pending physical gesture action budget exhausted".into());
+            }
+            self.pending_gesture_actions.push(action);
+            Ok(())
+        } else {
+            action.emit(self.output.as_mut().ok_or("Action output is closed")?)
+        }
     }
     fn set_dpi(&mut self, dpi: Option<u16>) -> Result<(), String> {
         let result = (|| {
@@ -598,6 +617,10 @@ impl<O: Output> Runtime<O> {
             }
             if dpi != self.dpi && self.bindings.gesture.as_ref().is_some_and(|g| g.physical) {
                 self.stroke = None;
+                self.pending_gesture_actions.clear();
+                if self.query_pending {
+                    self.feedback = None;
+                }
                 if self.pressed.contains(&195) {
                     self.suppressed.insert(195);
                 }
@@ -626,6 +649,7 @@ impl<O: Output> Runtime<O> {
             }
             if bindings.gesture != self.bindings.gesture {
                 self.stroke = None;
+                self.pending_gesture_actions.clear();
                 if self.pressed.contains(&195) {
                     self.suppressed.insert(195);
                 }
@@ -637,6 +661,7 @@ impl<O: Output> Runtime<O> {
     }
     fn cancel(&mut self) -> Result<(), String> {
         self.stroke = None;
+        self.pending_gesture_actions.clear();
         self.suppressed = self.pressed.clone();
         self.synchronized = false;
         let result = self.update_modifiers();
@@ -654,6 +679,7 @@ impl<O: Output> Runtime<O> {
             return result.clone();
         }
         self.stroke = None;
+        self.pending_gesture_actions.clear();
         self.held = HeldModifiers::None;
         let result = self
             .output
@@ -675,12 +701,6 @@ impl<O: Output> EventSink for Runtime<O> {
             Event::Buttons { initial, held, .. } => {
                 if *initial {
                     self.cancel()?;
-                }
-                if self.query_pending
-                    && self.bindings.gesture.as_ref().is_some_and(|g| g.physical)
-                    && held.contains(&195)
-                {
-                    self.suppressed.insert(195);
                 }
                 self.buttons(held, now)
             }
@@ -705,10 +725,18 @@ impl<O: Output> EventSink for Runtime<O> {
         }
     }
     fn before_query(&mut self) -> Result<(), String> {
-        // A getter may interleave motion before a changed DPI reply arrives.
-        // Physical strokes cannot use a previous reading across that interval.
+        if self.output.is_none() {
+            return Err("Action output is closed".into());
+        }
+        // Keep physical travel provisional while querying: unchanged periodic
+        // reads must not cancel a stroke or swallow new presses. No gesture
+        // output escapes before the entire snapshot validates the same scale.
         self.query_pending = true;
-        self.set_dpi(None)
+        if self.bindings.gesture.as_ref().is_some_and(|g| g.physical) {
+            Ok(())
+        } else {
+            self.set_dpi(None)
+        }
     }
     fn snapshot(&mut self, snapshot: &Value) -> Result<(), String> {
         let result = (|| {
@@ -725,6 +753,11 @@ impl<O: Output> EventSink for Runtime<O> {
             }
             self.set_dpi(dpi)?;
             self.query_pending = false;
+            // Consume before output: a failed/uncertain action is never retried,
+            // and finish() closes output and discards any remaining actions.
+            for action in std::mem::take(&mut self.pending_gesture_actions) {
+                action.emit(self.output.as_mut().ok_or("Action output is closed")?)?;
+            }
             Ok(())
         })();
         self.finish(result)

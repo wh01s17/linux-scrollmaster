@@ -102,9 +102,11 @@ antes de armar salida. La lectura final del lote verifica también el recibo com
 
 El consumidor único entrega eventos tipados durante consultas y reposo. Conserva
 64 eventos recientes y un presupuesto de 4096 informes por operación; no hereda
-el límite vital de 30 segundos del observador finito. Los getters invalidan DPI
-para gestos físicos mientras llegan informes intercalados y solo aceptan el nuevo
-DPI tras verificar el snapshot. Cambios de layout, mappings o reporting de una
+el límite vital de 30 segundos del observador finito. Durante getters, los gestos
+físicos conservan recorrido provisional y retienen hasta 64 acciones hasta
+confirmar el snapshot con los mismos DPI. Cambiar o perder DPI descarta esas
+acciones; una lectura idéntica ya no cancela la pulsación. Ver
+[corrección del sondeo](gesture-polling.md). Cambios de layout, mappings o reporting de una
 captura activa son terminales. `native_events` identifica entrega al motor;
 `native_capture` declara activación/registro y que faltan transiciones.
 
