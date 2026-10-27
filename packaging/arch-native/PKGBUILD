@@ -1,6 +1,6 @@
 # Native HID++ variant: no Solaar, no Python runtime. Local source tarball only.
 pkgname=linux-scrollmaster-native
-pkgver=0.2.1
+pkgver=0.3.0
 pkgrel=1
 pkgdesc='Independent configurator for the Logitech MX Master 3S (native HID++ backend)'
 arch=('x86_64')

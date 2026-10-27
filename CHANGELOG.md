@@ -6,6 +6,39 @@ All notable changes to Linux ScrollMaster are documented here. The format follow
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-27
+
+### Added
+
+- **Current profile** automatically saves each confirmed change to DPI, wheels,
+  buttons, shortcuts and gestures. **Save as…** keeps a named copy without
+  overwriting existing profiles or querying the mouse again.
+
+### Changed
+
+- Saved settings load automatically when the app opens and when the mouse
+  reconnects, without a reapply checkbox. Existing active profiles are preserved;
+  otherwise startup prefers Current profile, then the last saved profile for
+  that mouse. Keep the app open or in the tray for recovery and software actions.
+- Custom shortcuts and gestures apply automatically after a short editing pause;
+  exact DPI applies when confirming the field. Separate Apply buttons are removed.
+
+### Fixed
+
+- Consecutive edits are serialized and retain their device identity. Pending
+  shortcut and gesture edits survive leaving the editor; choosing the original
+  button function cancels its unfinished shortcut.
+- Saving reuses the reading that confirms the hardware change. Native polling
+  avoids repeating preflight and application when the fresh reading already
+  matches the profile.
+- Incomplete readings, partial writes and disk failures cannot be reported as a
+  successfully saved current profile or silently overwrite a named copy.
+
+### Validation
+
+- 842 automated tests passed, along with the frontend build and Rust check.
+  Physical acceptance of the new automatic save/load flow is pending.
+
 ## [0.2.1] - 2026-10-26
 
 ### Fixed
@@ -73,7 +106,8 @@ First public release.
 - Packages for Arch Linux, Debian/Ubuntu, Fedora and AppImage, built in CI, with a
   udev rule limited to the receiver's HID++ interface.
 
-[Unreleased]: https://github.com/wh01s17/linux-scrollmaster/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/wh01s17/linux-scrollmaster/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/wh01s17/linux-scrollmaster/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/wh01s17/linux-scrollmaster/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/wh01s17/linux-scrollmaster/compare/v0.1.2...v0.2.0
 [0.1.2]: https://github.com/wh01s17/linux-scrollmaster/compare/v0.1.1...v0.1.2
