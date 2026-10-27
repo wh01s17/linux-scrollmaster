@@ -1,5 +1,16 @@
 # Linux ScrollMaster: plan de implementación y continuidad
 
+**Inicio en el área de notificaciones, 27 de octubre de 2026:** activar la
+preferencia de bandeja hace que el próximo arranque (manual o XDG) conserve la
+ventana oculta. Se crea oculta desde Tauri para evitar destellos. Se espera al
+panel unos 10 s de reintentos; si falla, se muestra la ventana y se siguen
+reintentando el icono hasta 2 minutos sin ocultarla de nuevo. El segundo inicio
+abre la ventana existente. No se cambia la preferencia guardada ni se activa XDG.
+Cuatro regresiones de política nuevas; 846 pruebas aprobadas (252 Python/JS y
+594 Rust), más build y cargo check. Las suites usan sockets fuera del sandbox.
+Aceptación gráfica y de inicio de sesión pendientes. Contrato y evidencia:
+[ciclo de escritorio](docs/desktop-lifecycle.md).
+
 **Actualización del 27 de octubre de 2026:** la GUI guarda cada cambio confirmado
 en **Perfil actual**. **Guardar como…** crea copias con nombre sin consultar HID;
 atajos y gestos ya no exigen aplicar manualmente. La carga al iniciar y al

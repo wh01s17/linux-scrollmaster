@@ -1,4 +1,4 @@
-//! Optional tray. Closing keeps the controller alive only after explicit opt-in.
+//! Opt-in tray startup and background operation, with a visible fallback.
 use serde_json::{json, Value};
 use std::{
     fs,
@@ -18,12 +18,38 @@ use tauri::{
 pub struct DesktopState {
     enabled: AtomicBool,
     error: Mutex<Option<String>>,
+    startup: Mutex<Startup>,
+}
+#[derive(Debug, PartialEq)]
+enum Startup {
+    Waiting,
+    Tray,
+    Window,
+}
+impl Startup {
+    /// Resolve initial visibility once. A late panel must never hide a window
+    /// opened explicitly or shown as a fallback.
+    fn resolve(&mut self, enabled: bool, available: bool, expired: bool) -> bool {
+        if *self != Self::Waiting {
+            return false;
+        }
+        if !enabled || (!available && expired) {
+            *self = Self::Window;
+            true
+        } else {
+            if available {
+                *self = Self::Tray;
+            }
+            false
+        }
+    }
 }
 impl DesktopState {
     pub fn new() -> Self {
         Self {
             enabled: AtomicBool::new(false),
             error: Mutex::new(None),
+            startup: Mutex::new(Startup::Waiting),
         }
     }
     pub fn keep_running(&self) -> bool {
@@ -128,10 +154,25 @@ pub(crate) fn refresh_tray(app: &tauri::AppHandle) {
     }
 }
 pub fn show_window(app: &tauri::AppHandle) {
+    *app.state::<DesktopState>()
+        .startup
+        .lock()
+        .unwrap_or_else(|e| e.into_inner()) = Startup::Window;
     if let Some(window) = app.get_webview_window("main") {
         let _ = window.show();
         let _ = window.unminimize();
         let _ = window.set_focus();
+    }
+}
+fn resolve_startup(app: &tauri::AppHandle, available: bool, expired: bool) {
+    let state = app.state::<DesktopState>();
+    let show = state
+        .startup
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .resolve(state.keep_running(), available, expired);
+    if show {
+        show_window(app);
     }
 }
 fn record(app: &tauri::AppHandle, error: Option<String>) {
@@ -160,13 +201,15 @@ pub(crate) fn ensure_tray(app: &tauri::AppHandle) -> bool {
 /// Wait for a tray host that appears after us (autostart races the panel).
 fn retry_tray(app: tauri::AppHandle) {
     std::thread::spawn(move || {
-        for _ in 0..TRAY_RETRIES {
+        for attempt in 1..=TRAY_RETRIES {
             std::thread::sleep(TRAY_RETRY_DELAY);
             let (tx, rx) = mpsc::channel();
             let handle = app.clone();
             let sent = app.run_on_main_thread(move || {
                 let state = handle.state::<DesktopState>();
-                let done = !state.keep_running() || ensure_tray(&handle);
+                let available = ensure_tray(&handle);
+                resolve_startup(&handle, available, attempt >= STARTUP_WAIT_RETRIES);
+                let done = !state.keep_running() || available;
                 let _ = tx.send(done);
             });
             if sent.is_err() || rx.recv().unwrap_or(true) {
@@ -177,6 +220,8 @@ fn retry_tray(app: tauri::AppHandle) {
 }
 const TRAY_RETRIES: u32 = 60;
 const TRAY_RETRY_DELAY: std::time::Duration = std::time::Duration::from_secs(2);
+// Show a fallback after 10 seconds, but keep trying the tray for two minutes.
+const STARTUP_WAIT_RETRIES: u32 = 5;
 pub fn initialize(app: &tauri::AppHandle) {
     match path().and_then(|p| load(&p)) {
         Ok(enabled) => {
@@ -184,11 +229,16 @@ pub fn initialize(app: &tauri::AppHandle) {
             app.state::<DesktopState>()
                 .enabled
                 .store(enabled, Ordering::SeqCst);
-            if enabled && !ensure_tray(app) {
+            let available = enabled && ensure_tray(app);
+            resolve_startup(app, available, false);
+            if enabled && !available {
                 retry_tray(app.clone());
             }
         }
-        Err(error) => record(app, Some(error)),
+        Err(error) => {
+            record(app, Some(error));
+            show_window(app);
+        }
     }
 }
 #[tauri::command]
@@ -232,6 +282,42 @@ pub async fn set_tray(app: tauri::AppHandle, enabled: bool) -> Result<Value, Str
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn startup_uses_tray_without_showing_the_window() {
+        let config: Value = serde_json::from_str(include_str!("../tauri.conf.json")).unwrap();
+        assert_eq!(config["app"]["windows"][0]["visible"], false);
+        let mut startup = Startup::Waiting;
+        assert!(!startup.resolve(true, true, false));
+        assert_eq!(startup, Startup::Tray);
+        assert!(!startup.resolve(true, false, true));
+    }
+    #[test]
+    fn delayed_panel_stays_hidden_until_ready() {
+        let mut startup = Startup::Waiting;
+        assert!(!startup.resolve(true, false, false));
+        assert_eq!(startup, Startup::Waiting);
+        assert!(!startup.resolve(true, true, false));
+        assert_eq!(startup, Startup::Tray);
+    }
+    #[test]
+    fn missing_panel_shows_once_and_late_panel_keeps_window_open() {
+        let mut startup = Startup::Waiting;
+        assert!(startup.resolve(true, false, true));
+        assert_eq!(startup, Startup::Window);
+        assert!(!startup.resolve(true, true, true));
+        assert_eq!(startup, Startup::Window);
+    }
+    #[test]
+    fn disabled_tray_and_explicit_open_do_not_wait_for_panel() {
+        let mut startup = Startup::Waiting;
+        assert!(startup.resolve(false, false, false));
+        assert_eq!(startup, Startup::Window);
+        // An explicit open (IPC or tray) also cancels the startup wait.
+        let mut opened = Startup::Window;
+        assert!(!opened.resolve(true, false, true));
+        assert!(!opened.resolve(true, true, false));
+        assert_eq!(opened, Startup::Window);
+    }
     fn location() -> PathBuf {
         static NEXT: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
         std::env::temp_dir()

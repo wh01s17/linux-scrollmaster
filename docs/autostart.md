@@ -2,7 +2,10 @@
 
 En Preferencias de Linux ScrollMaster, «Abrir Linux ScrollMaster al iniciar sesión» permite crear o retirar
 una entrada XDG propia. Viene desactivada cuando no existe esa entrada. Al iniciar
-sesión se abre la ventana normalmente; no empieza oculta ni se activa la bandeja.
+sesión se respeta la preferencia «Iniciar en el área de notificaciones y continuar
+al cerrar»: con ella activada, empieza con la ventana oculta; sin ella se abre la
+ventana. Si no se puede crear el icono tras unos 10 s de reintentos, se muestra la
+ventana. El inicio automático no activa la preferencia de bandeja por su cuenta.
 La instancia única sigue evitando un segundo controlador. Desactivarlo evita el
 próximo inicio por esta entrada y no termina la instancia que ya está abierta.
 
@@ -10,7 +13,8 @@ El escritorio debe procesar autostart XDG. Hyprland por sí solo no garantiza es
 procesamiento; Linux ScrollMaster no instala un lanzador, modifica Hyprland/Omarchy ni habilita
 servicios. No se promete compatibilidad por haber escrito un `.desktop`. El sondeo,
 los perfiles y las acciones siguen dependiendo de que Linux ScrollMaster permanezca abierta.
-Los automatismos del mouse solo se recuperan si el usuario ya armó un perfil.
+El perfil guardado se carga automáticamente; contrato vigente en
+[automatic-profiles.md](automatic-profiles.md).
 
 ## Implementación
 

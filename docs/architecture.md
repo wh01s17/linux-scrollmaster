@@ -8,6 +8,11 @@ y la carga al abrir/reconectar no requiere una casilla. Este contrato sustituye
 las referencias anteriores a guardar manualmente y habilitar reaplicación:
 [perfil actual, costes y fallos](automatic-profiles.md).
 
+La bandeja optativa también controla el arranque: ventana inicialmente oculta,
+espera acotada del panel y ventana de respaldo si falla. El sondeo Rust continúa
+con la ventana oculta; un segundo inicio muestra la instancia existente.
+[Contrato y aceptación pendiente](desktop-lifecycle.md).
+
 ## ADR-001: backend híbrido inicial
 
 Estado: implementado como transición. ADR-002 sustituye la decisión de mantener

@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Linux ScrollMaster",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "identifier": "io.github.wh01s17.linux-scrollmaster",
   "build": {
     "beforeDevCommand": "pnpm dev",
@@ -13,6 +13,7 @@
     "windows": [
       {
         "title": "Linux ScrollMaster",
+        "visible": false,
         "width": 1180,
         "height": 810,
         "minWidth": 850,

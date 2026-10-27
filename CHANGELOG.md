@@ -6,6 +6,20 @@ All notable changes to Linux ScrollMaster are documented here. The format follow
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-10-27
+
+### Changed
+
+- Enabling the tray preference now also starts the app in the notification area,
+  with its window hidden. This applies to manual launches and XDG autostart.
+  If the tray cannot be created after about 10 seconds of retries, the window
+  appears. Opening the app again shows the existing window.
+
+### Validation
+
+- 846 automated tests passed, along with the frontend build and Rust check.
+  Graphical acceptance of tray startup and the next XDG login is pending.
+
 ## [0.3.0] - 2026-10-27
 
 ### Added
@@ -106,7 +120,8 @@ First public release.
 - Packages for Arch Linux, Debian/Ubuntu, Fedora and AppImage, built in CI, with a
   udev rule limited to the receiver's HID++ interface.
 
-[Unreleased]: https://github.com/wh01s17/linux-scrollmaster/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/wh01s17/linux-scrollmaster/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/wh01s17/linux-scrollmaster/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/wh01s17/linux-scrollmaster/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/wh01s17/linux-scrollmaster/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/wh01s17/linux-scrollmaster/compare/v0.1.2...v0.2.0

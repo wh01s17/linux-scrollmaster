@@ -128,11 +128,8 @@ fn main() {
             app.manage(instance_lease);
             let window_app = app.handle().clone();
             instance::serve(listener, move || {
-                if let Some(window) = window_app.get_webview_window("main") {
-                    let _ = window.show();
-                    let _ = window.unminimize();
-                    let _ = window.set_focus();
-                }
+                let handle = window_app.clone();
+                let _ = window_app.run_on_main_thread(move || lifecycle::show_window(&handle));
             });
             lifecycle::initialize(app.handle());
             scroll_speed::keep_applied();
