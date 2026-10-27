@@ -267,6 +267,7 @@ impl<B: ProfileBackend> ProfileService<B> {
             .and_then(Value::as_str)
             .ok_or_else(|| ServiceError::new("validation", "Invalid profile service request"))?;
         let local = [
+            "save_copy",
             "auto",
             "rename",
             "delete",
@@ -285,6 +286,10 @@ impl<B: ProfileBackend> ProfileService<B> {
             ));
         }
         let mut revision = self.store.load().map_err(ServiceError::storage)?;
+        let autosave = request.get("autosave").map_or(Ok(false), |v| {
+            v.as_bool()
+                .ok_or_else(|| ServiceError::new("validation", "Invalid autosave flag"))
+        })?;
         if op == "applications" {
             // The worker adds a read-only desktop catalogue. Do not acquire HID,
             // reconcile an armed profile or rewrite the store for this request.
@@ -324,6 +329,36 @@ impl<B: ProfileBackend> ProfileService<B> {
             ));
         }
         if op == "snapshot" {
+            let resume = request.get("resume").map_or(Ok(false), |v| {
+                v.as_bool()
+                    .ok_or_else(|| ServiceError::new("validation", "Invalid resume flag"))
+            })?;
+            if resume && revision.document().as_value()["active"].get(&id).is_none() {
+                let name = revision
+                    .document()
+                    .profiles()
+                    .iter()
+                    .find(|p| p["device"] == id && p["name"] == crate::profiles::CURRENT_PROFILE)
+                    .or_else(|| {
+                        revision
+                            .document()
+                            .profiles()
+                            .iter()
+                            .rfind(|p| p["device"] == id)
+                    })
+                    .map(|p| p["name"].clone());
+                if let Some(name) = name {
+                    let document = revision
+                        .document()
+                        .manage(&json!({"op":"auto","device":id,"name":name}))
+                        .map_err(|e| ServiceError::new("validation", e))?
+                        .document;
+                    revision = self
+                        .store
+                        .commit(&revision, &document)
+                        .map_err(ServiceError::storage)?;
+                }
+            }
             let mut warnings = Vec::new();
             let mut reconciliation = Vec::new();
             let mut failures = Vec::new();
@@ -343,6 +378,19 @@ impl<B: ProfileBackend> ProfileService<B> {
                         profile.get("buttons").cloned(),
                     )
                     .map_err(|e| ServiceError::new("validation", e))?;
+                    // The fresh snapshot is already a confirmation. Avoid a
+                    // second full preflight/readback when nothing has drifted.
+                    if changes.confirm(device.as_ref().unwrap(), &id).is_ok() {
+                        reconciliation.push(json!({"device":id,"profile":name,"applied":[]}));
+                        return Ok(Self::response(
+                            revision.document(),
+                            device.into_iter().collect(),
+                            warnings,
+                            reconciliation,
+                            failures,
+                            None,
+                        ));
+                    }
                     let prepared = self.prepare(&changes, deadline).and_then(|()| {
                         self.store
                             .ensure_current(&revision)
@@ -380,10 +428,20 @@ impl<B: ProfileBackend> ProfileService<B> {
         }
         if op == "save" {
             let snapshot = self.read(&id, deadline)?;
-            let document = revision
+            let mut document = revision
                 .document()
                 .save_snapshot(&id, &request["name"], &snapshot)
                 .map_err(|e| ServiceError::new("validation", e))?;
+            if autosave {
+                document = document
+                    .save_snapshot(&id, &json!(crate::profiles::CURRENT_PROFILE), &snapshot)
+                    .map_err(|e| ServiceError::new("validation", e))?
+                    .manage(
+                        &json!({"op":"auto","device":id,"name":crate::profiles::CURRENT_PROFILE}),
+                    )
+                    .map_err(|e| ServiceError::new("validation", e))?
+                    .document;
+            }
             Self::check_time(deadline)?;
             self.store
                 .commit(&revision, &document)
@@ -424,6 +482,36 @@ impl<B: ProfileBackend> ProfileService<B> {
             .ensure_current(&revision)
             .map_err(ServiceError::storage)?;
         let applied = self.apply(&changes, &id, deadline)?;
+        if autosave {
+            let saved = (|| {
+                let document = revision
+                    .document()
+                    .save_snapshot(
+                        &id,
+                        &json!(crate::profiles::CURRENT_PROFILE),
+                        &applied.snapshot,
+                    )
+                    .map_err(|e| ServiceError::new("autosave", e))?;
+                let document = document
+                    .manage(
+                        &json!({"op":"auto","device":id,"name":crate::profiles::CURRENT_PROFILE}),
+                    )
+                    .map_err(|e| ServiceError::new("autosave", e))?
+                    .document;
+                Self::check_time(deadline)?;
+                self.store
+                    .commit(&revision, &document)
+                    .map_err(ServiceError::storage)
+            })();
+            revision = saved.map_err(|mut error| {
+                error.message = format!(
+                    "El cambio se aplicó, pero no se pudo guardar el perfil actual: {}",
+                    error.message
+                );
+                error.confirmed = applied.confirmed.clone();
+                error
+            })?;
+        }
         Ok(Self::response(
             revision.document(),
             vec![applied.snapshot],

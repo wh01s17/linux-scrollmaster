@@ -178,11 +178,12 @@ fn decode(bytes: &[u8]) -> Result<Value, String> {
         serde_json::from_slice(bytes).map_err(|e| format!("Invalid request JSON: {e}"))?;
     let op = request["op"].as_str().ok_or("Request operation required")?;
     let (required, optional): (&[&str], &[&str]) = match op {
-        "snapshot" => (&["op"], &["device"]),
+        "snapshot" => (&["op"], &["device", "resume"]),
         "applications" => (&["op"], &["device"]),
         "shutdown" => (&["op"], &[]),
-        "save" | "restore" | "delete" | "export" => (&["op", "device", "name"], &[]),
-        "set" | "remap" => (&["op", "device", "changes"], &[]),
+        "delete" | "export" | "save_copy" => (&["op", "device", "name"], &[]),
+        "save" | "restore" => (&["op", "device", "name"], &["autosave"]),
+        "set" | "remap" => (&["op", "device", "changes"], &["autosave"]),
         "auto" => (&["op", "device"], &["name"]),
         "rename" => (&["op", "device", "name", "new_name"], &[]),
         "import" | "import_preview" => (&["op", "device", "document"], &[]),

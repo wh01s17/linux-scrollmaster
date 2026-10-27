@@ -73,7 +73,7 @@ Details of what was verified and what is pending are in the
 - **Gestures:** hold the thumb button and move in five directions (up, down, left,
   right and no movement), with an adjustable distance that stays stable when DPI changes.
 - **Desktop (Hyprland 0.55/0.56):** previous/next workspace, maximize and fullscreen.
-- **Profiles:** save, restore, rename, export and import; reapply on reconnect;
+- **Profiles:** automatic saving to Current profile, named copies, restore, rename, export and import; automatic recovery on reconnect;
   automatic switching by focused application on Hyprland.
 - **Interface:** English or Spanish (chosen in Preferences), a 3D mouse that turns to
   the selected control, light and dark themes, scaling for 4K screens and an optional tray.
@@ -228,13 +228,19 @@ sudo udevadm control --reload
    control and are confirmed by reading the mouse back.
 4. In **Buttons and gestures**, assign functions or shortcuts. "Test assignments" lets
    you check Alt/Ctrl and Copy/Paste without leaving the app.
-5. Save a profile. You can reapply it on reconnect or assign it to an application.
+5. Changes save automatically to **Current profile**, including buttons, shortcuts
+   and gestures. Use **Save as…** to keep a named copy or assign one to an application.
+   Your saved configuration loads on startup and reconnect; there is no opt-in checkbox.
 
 Keyboard actions and gestures work while the app is open, or from the tray if you
 enable that preference. When you quit, the app releases the buttons it captured and
 those actions stop. Hardware settings (DPI, wheels, native remapping) stay on the mouse
 until its firmware resets them: the MX Master 3S goes back to 1000 DPI when turned off,
-which is why the reapply-on-reconnect option exists.
+which is why Linux ScrollMaster restores your saved configuration automatically.
+
+Saving reuses the confirmed device reading; keeping a named copy does not query
+the mouse again. See the [automatic profile contract](docs/automatic-profiles.md)
+for failure handling and the pending physical acceptance of this new flow.
 
 Profiles are stored in `$XDG_CONFIG_HOME/linux-scrollmaster/profiles.json` (usually
 `~/.config/linux-scrollmaster/profiles.json`).

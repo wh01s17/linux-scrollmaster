@@ -2,6 +2,7 @@
 import { computed, onMounted, ref, watch } from 'vue';
 import { invoke, isTauri } from '@tauri-apps/api/core';
 import { useDevice } from './device';
+import type { ButtonAction } from './deviceState';
 import ProfileManager from './components/ProfileManager.vue';
 import GestureEditor from './components/GestureEditor.vue';
 import DesktopPreferences from './components/DesktopPreferences.vue';
@@ -39,7 +40,7 @@ async function applyExactDpi() {
     return;
   }
   dpiError.value = '';
-  await set('dpi', target);
+  if (target !== value('dpi')) await set('dpi', target);
   dpiText.value = String(value('dpi') ?? '');
 }
 function value(key: string) { return mouse.value?.settings[key]?.value; }
@@ -62,6 +63,10 @@ async function toggle(key: string, e: Event) {
   input.checked = !!value(key);
 }
 async function remapButton(id: string, action: string | number) {
+  if (typeof action === 'string' && action.startsWith('custom:')) {
+    device.stageRemap(id, action as ButtonAction);
+    return;
+  }
   await request('remap', { changes: { [id]: action } });
 }
 const preferencesOpen = ref(false);
@@ -99,7 +104,7 @@ function theme() { dark.value = !dark.value; localStorage.setItem('linux-scrollm
               <div class="setting-heading"><label for="dpi">{{ t('pointer.sensitivity') }}</label><output>{{ value('dpi') ?? '—' }} <small>DPI</small></output></div>
               <input id="dpi" type="range" :min="0" :max="Math.max(0, dpi.length - 1)" :value="dpi.indexOf(Number(value('dpi')))" :disabled="!available('dpi')" @change="dpiChange">
               <div class="range-labels"><span>{{ t('pointer.precise') }}</span><span>{{ t('pointer.fast') }}</span></div>
-              <div class="dpi-exact"><label for="dpi-exact">{{ t('pointer.exact') }}</label><input id="dpi-exact" v-model="dpiText" type="number" :min="dpi[0]" :max="dpi[dpi.length - 1]" :step="dpi.length > 1 ? dpi[1] - dpi[0] : 1" :disabled="!available('dpi')" @keydown.enter.prevent="applyExactDpi"><button :disabled="!available('dpi')" @click="applyExactDpi">{{ t('pointer.apply') }}</button></div>
+              <div class="dpi-exact"><label for="dpi-exact">{{ t('pointer.exact') }}</label><input id="dpi-exact" v-model="dpiText" type="number" :min="dpi[0]" :max="dpi[dpi.length - 1]" :step="dpi.length > 1 ? dpi[1] - dpi[0] : 1" :disabled="!available('dpi')" @change="applyExactDpi" @keydown.enter.prevent="applyExactDpi"></div>
               <small v-if="dpi.length">{{ t('pointer.range', { min: dpi[0], max: dpi[dpi.length - 1], step: dpi.length > 1 ? dpi[1] - dpi[0] : 1 }) }}</small>
               <p v-if="dpiError" role="alert">{{ dpiError }}</p>
               <p class="tip">{{ t('pointer.tip') }}</p>

@@ -13,7 +13,7 @@ from contextlib import nullcontext
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from model import SCALARS, validate_document, validate_buttons, button_schema, MAX_DOCUMENT_BYTES
-from profiles import LOCAL_OPERATIONS, manage
+from profiles import LOCAL_OPERATIONS, manage, CURRENT_PROFILE
 from desktop import describe as describe_desktop, effective_profile
 from solaar_adapter import SolaarBackend, ResidentAdapter, validate, restore_guard_buttons
 
@@ -90,11 +90,17 @@ def handle(req, backend_factory=SolaarBackend):
     op = req.get('op')
     if op not in ('snapshot', 'set', 'remap', 'save', 'restore', 'auto', 'applications', *LOCAL_OPERATIONS): raise ValueError('Operación no permitida.')
     data = read_profiles()
+    if not isinstance(req.get('autosave', False), bool):
+        raise ValueError('Solicitud de guardado automático inválida.')
+    if not isinstance(req.get('resume', False), bool):
+        raise ValueError('Solicitud de recuperación inválida.')
     desktop = describe_desktop(include_apps=op == 'applications')
     if op in (*LOCAL_OPERATIONS, 'applications'):
         data, transfer, changed = manage(data, req) if op != 'applications' else (data, None, False)
         if changed:
             save_profiles(data)
+        if op == 'save_copy':
+            return describe_snapshot(data, desktop=desktop)
         try:
             blocked = conflict()
             if blocked: raise RuntimeError(blocked)
@@ -171,6 +177,12 @@ def handle(req, backend_factory=SolaarBackend):
             for d in backend.devices:
                 try:
                     identity = backend.identity(d)
+                    if req.get('resume') and identity not in data['active']:
+                        saved = [p for p in data['profiles'] if p['device'] == identity]
+                        profile = next((p for p in saved if p['name'] == CURRENT_PROFILE), saved[-1] if saved else None)
+                        if profile:
+                            data['active'][identity] = profile['name']
+                            save_profiles(data)
                     profile = effective_profile(data, identity, desktop)
                     if profile:
                         applied = apply_profile(backend, d, profile)
@@ -178,8 +190,47 @@ def handle(req, backend_factory=SolaarBackend):
                 except Exception as e:
                     errors.append(str(e))
         result = describe_snapshot(data, backend, errors, desktop=desktop)
+        if req.get('autosave') and op in ('set', 'remap', 'restore', 'save'):
+            try:
+                desc = next(d for d in result['devices'] if d['id'] == identity)
+                settings = req['changes'] if op == 'set' else profile['settings'] if op == 'restore' else {}
+                buttons = req['changes'] if op == 'remap' else profile.get('buttons', {}) if op == 'restore' else {}
+                for key, value in settings.items():
+                    if not desc['settings'].get(key, {}).get('available') or desc['settings'][key]['value'] != value:
+                        raise ValueError(f'No se confirmó el ajuste: {key}')
+                controls = {c['id']: c for c in desc.get('buttons', {}).get('controls', [])}
+                for cid, value in buttons.items():
+                    if not controls.get(cid, {}).get('available') or controls[cid]['value'] != value:
+                        raise ValueError(f'No se confirmó el botón: {cid}')
+                save_current(data, identity, desc)
+            except Exception as e:
+                raise RuntimeError(f'El cambio se aplicó, pero no se pudo guardar el perfil actual: {e}') from e
+            result['profiles'] = data['profiles']
+            result['active'] = data['active']
+            result['profile_version'] = data['version']
         result['reconciliation'] = reconciliation
         return result
+
+
+def save_current(data, identity, desc):
+    values = {k: v['value'] for k, v in desc['settings'].items() if v['available']}
+    if any(k not in values for k in SCALARS):
+        raise ValueError('No se pudieron leer todos los ajustes.')
+    old = next((p for p in data['profiles'] if p['device'] == identity and p['name'] == CURRENT_PROFILE), {})
+    profile = {**old, 'device': identity, 'name': CURRENT_PROFILE, 'settings': values}
+    buttons = desc.get('buttons', {})
+    controls = buttons.get('controls', [])
+    if buttons.get('error') or any(not c['available'] for c in controls):
+        raise ValueError('No se pudieron leer los botones.')
+    mappings = {c['id']: c['value'] for c in controls}
+    if len(mappings) != len(controls) or any(k not in mappings for k in old.get('buttons', {})):
+        raise ValueError('Lectura de botones incompleta.')
+    if mappings:
+        profile['buttons'] = mappings
+        data['version'] = max(data['version'], button_schema(mappings))
+    data['profiles'] = [p for p in data['profiles'] if not (p['device'] == identity and p['name'] == CURRENT_PROFILE)] + [profile]
+    data['active'][identity] = CURRENT_PROFILE
+    save_profiles(data)
 
 
 def describe_snapshot(data, backend=None, warnings=(), desktop=None):
@@ -247,6 +298,7 @@ def main():
             with open(lockdir / 'linux-scrollmaster-hardware.lock', 'w') as lock:
                 last_tick = time.time()
                 last_conflict = 0
+                resume_pending = False
                 try:
                     while True:
                         ready = select.select([sys.stdin], [], [], 0.01)[0]
@@ -254,7 +306,14 @@ def main():
                             line = sys.stdin.readline()
                             if not line: break
                             try:
-                                reply = execute(json.loads(line), resident, lock)
+                                request = json.loads(line)
+                                if isinstance(request, dict) and request.get('op') == 'snapshot':
+                                    resume_pending = resume_pending or request.get('resume') is True
+                                    if resume_pending:
+                                        request['resume'] = True
+                                reply = execute(request, resident, lock)
+                                if isinstance(request, dict) and request.get('op') == 'snapshot' and reply.get('ok') and reply.get('data', {}).get('devices'):
+                                    resume_pending = False
                             except Exception as e:
                                 reply = {'ok': False, 'error': str(e)}
                             print(json.dumps(reply), flush=True)

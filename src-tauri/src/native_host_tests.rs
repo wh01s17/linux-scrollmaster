@@ -100,6 +100,37 @@ fn offline_snapshot_lists_stored_profiles_with_a_diagnostic_and_no_device() {
     assert_eq!(located.load(Ordering::SeqCst), 1);
     assert_eq!(launched.load(Ordering::SeqCst), 0);
 }
+
+#[test]
+fn startup_recovery_waits_for_a_mouse_and_is_forwarded_to_the_first_online_poll() {
+    let dir = Sandbox::new();
+    let (mut host, _, _) = host(&dir, false);
+    host.request(&json!({"op":"snapshot","resume":true}), timeout())
+        .unwrap();
+    assert!(host.resume_pending);
+    host.locate = Box::new(|| {
+        Ok(Located {
+            slot: 2,
+            identity: ID.into(),
+        })
+    });
+    host.last_failure = None;
+    let script = r#"while IFS= read -r line; do case "$line" in
+*'"shutdown"'*) printf '%s\n' '{"ok":true,"data":{"stopped":true}}'; exit 0;;
+*'"resume":true'*) printf '%s\n' '{"ok":true,"data":{"devices":[],"profiles":[],"active":{},"warnings":[],"resume_seen":true}}';;
+*) printf '%s\n' '{"ok":true,"data":{"devices":[],"profiles":[],"active":{},"warnings":[],"resume_seen":false}}';;
+esac; done"#;
+    host.launch = Box::new(move |_| {
+        let mut command = Command::new("/bin/sh");
+        command.args(["-c", script]);
+        Worker::start(command)
+    });
+    let resumed = host.request(&json!({"op":"snapshot"}), timeout()).unwrap();
+    assert_eq!(resumed["data"]["resume_seen"], true);
+    assert!(!host.resume_pending);
+    let next = host.request(&json!({"op":"snapshot"}), timeout()).unwrap();
+    assert_eq!(next["data"]["resume_seen"], false);
+}
 #[test]
 fn offline_local_management_works_but_hardware_operations_are_refused() {
     let dir = Sandbox::new();

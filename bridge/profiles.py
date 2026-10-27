@@ -5,7 +5,8 @@ import json
 from model import validate_document, MAX_DOCUMENT_BYTES, MAX_PROFILES
 from desktop import app_id
 
-LOCAL_OPERATIONS = ('rename', 'delete', 'export', 'import_preview', 'import', 'rule_set', 'rule_delete')
+CURRENT_PROFILE = '__current__'
+LOCAL_OPERATIONS = ('save_copy', 'rename', 'delete', 'export', 'import_preview', 'import', 'rule_set', 'rule_delete')
 
 
 def name(value):
@@ -50,6 +51,17 @@ def manage(data, request):
         raise ValueError('Selecciona un dispositivo para gestionar sus perfiles.')
     result = deepcopy(data)
     op = request['op']
+    if op == 'save_copy':
+        target = name(request.get('name'))
+        if target == CURRENT_PROFILE or any(p['device'] == device and p['name'] == target for p in result['profiles']):
+            raise ValueError('Ya existe un perfil con ese nombre. Elige otro.')
+        profile = next((deepcopy(p) for p in result['profiles'] if p['device'] == device and p['name'] == CURRENT_PROFILE), None)
+        if profile is None:
+            raise ValueError('Todavía no hay un perfil actual guardado.')
+        profile['name'] = target
+        result['profiles'].append(profile)
+        validate_document(result)
+        return result, None, True
     if op in ('rule_set', 'rule_delete'):
         application = request.get('application')
         if not app_id(application):
@@ -74,10 +86,14 @@ def manage(data, request):
     if profile is None:
         raise ValueError('Perfil no encontrado para este dispositivo.')
     old = profile['name']
+    if old == CURRENT_PROFILE and op in ('rename', 'delete'):
+        raise ValueError('El perfil actual se conserva automáticamente; usa Guardar como.')
     if op == 'export':
         return result, {'document': {'version':data['version'], 'profiles':[deepcopy(profile)], 'active':{}}}, False
     if op == 'rename':
         new = name(request.get('new_name'))
+        if new == CURRENT_PROFILE:
+            raise ValueError('El nombre del perfil actual está reservado.')
         if new == old:
             return result, None, False
         if any(p['device'] == device and p['name'] == new for p in result['profiles']):

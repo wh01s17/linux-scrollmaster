@@ -15,7 +15,7 @@ const options = computed(() => props.control.choices.map(choice => ({ ...choice,
 const label = computed(() => optionLabel(props.control.id, props.control.label));
 function select(action: string | number | null) {
   draft.value = action;
-  if (action !== null && !custom.value) emit('apply', action);
+  if (action !== null) emit('apply', action);
 }
 </script>
 
@@ -23,7 +23,6 @@ function select(action: string | number | null) {
   <div class="field button-assignment">
     <template v-if="control.id !== '195'">
       <ActionSelect :model-value="draft" :label="label" :options="options" :catalogue="control.shortcuts" :disabled="disabled || !control.available" @update:model-value="select" />
-      <button v-if="custom" class="apply-shortcut" :disabled="disabled || !control.available || draft === control.value" @click="draft !== null && emit('apply', draft)">{{ t('assign.applyShortcut') }}</button>
     </template>
     <label v-else>{{ label }}
       <select :value="typeof control.value === 'object' && control.value ? 'gestures' : control.value ?? ''" :disabled="disabled || !control.available" @change="select(Number(($event.target as HTMLSelectElement).value))">
@@ -41,6 +40,4 @@ function select(action: string | number | null) {
 .button-assignment { display: block; margin: 0; padding: 12px 0; border-top: 1px solid var(--line); }
 .button-assignment:first-child { border-top: 0; }
 .button-assignment > label { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr); align-items: center; gap: 12px; font-size: 12px; }
-.apply-shortcut { display: block; margin: 10px 0 0 auto; border: 1px solid transparent; background: var(--accent-bg); color: var(--accent); border-radius: 8px; padding: 8px 12px; font-size: 11px; cursor: pointer; }
-.apply-shortcut:disabled { opacity: .45; cursor: default; }
 </style>

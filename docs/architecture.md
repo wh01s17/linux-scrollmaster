@@ -1,5 +1,13 @@
 # Arquitectura y decisiones
 
+**Estado vigente, 27 de octubre de 2026:** el paquete usa el backend Rust nativo;
+Python/Solaar queda como ruta de desarrollo heredada. La historia N1–N5 que sigue
+documenta etapas anteriores y no implica que la GUI empaquetada siga usando Python.
+La edición guarda automáticamente Perfil actual, Guardar como crea copias locales
+y la carga al abrir/reconectar no requiere una casilla. Este contrato sustituye
+las referencias anteriores a guardar manualmente y habilitar reaplicación:
+[perfil actual, costes y fallos](automatic-profiles.md).
+
 ## ADR-001: backend híbrido inicial
 
 Estado: implementado como transición. ADR-002 sustituye la decisión de mantener

@@ -177,4 +177,64 @@ class ReliabilityTests(unittest.TestCase):
         self.assertEqual(list(service.profile_path().parent.glob('.profiles-*')),[])
 
 
+class AutosaveTests(unittest.TestCase):
+    setUp = ServiceTests.setUp
+    tearDown = ServiceTests.tearDown
+    call = ServiceTests.call
+
+    def test_autosave_keeps_named_profiles_and_recovers_current_on_reconnect(self):
+        self.call('save', name='Work')
+        self.call('auto', name='Work')
+        result = self.call('set', changes={'dpi': 400}, autosave=True)
+        current = next(p for p in result['profiles'] if p['name'] == service.CURRENT_PROFILE)
+        self.assertEqual(current['settings']['dpi'], 400)
+        self.assertEqual(result['active'], {'unit-id': service.CURRENT_PROFILE})
+        self.assertEqual(result['profiles'][0]['settings']['dpi'], 1800)
+        FakeBackend.values['dpi'] = 1000
+        self.call('snapshot')
+        self.assertEqual(FakeBackend.values['dpi'], 400)
+
+    def test_save_copy_is_disk_only_and_refuses_to_overwrite(self):
+        self.call('set', changes={'dpi': 400}, autosave=True)
+        with patch.object(FakeBackend, '__enter__', side_effect=AssertionError('must not open hardware')):
+            self.call('save_copy', name='Favorite')
+        before = service.profile_path().read_bytes()
+        with self.assertRaises(ValueError):
+            self.call('save_copy', name='Favorite')
+        self.assertEqual(service.profile_path().read_bytes(), before)
+
+    def test_disk_failure_after_apply_does_not_claim_saved_or_rearm_old_profile(self):
+        self.call('save', name='Work')
+        self.call('auto', name='Work')
+        save = service.save_profiles
+        def fail_current(data):
+            if data['active'].get('unit-id') == service.CURRENT_PROFILE:
+                raise PermissionError('disk')
+            save(data)
+        with patch.object(service, 'save_profiles', side_effect=fail_current):
+            with self.assertRaisesRegex(RuntimeError, 'El cambio se aplicó, pero no se pudo guardar'):
+                self.call('set', changes={'dpi': 400}, autosave=True)
+        self.assertEqual(FakeBackend.values['dpi'], 400)
+        self.assertEqual(service.read_profiles()['active'], {})
+        self.assertFalse(any(p['name'] == service.CURRENT_PROFILE for p in service.read_profiles()['profiles']))
+
+    def test_partial_write_never_saves_a_new_current_profile(self):
+        with patch.object(FakeBackend, 'apply', side_effect=RuntimeError('partial write')):
+            with self.assertRaises(RuntimeError):
+                self.call('set', changes={'dpi': 400}, autosave=True)
+        self.assertEqual(service.read_profiles()['profiles'], [])
+
+    def test_startup_loads_saved_settings_without_an_opt_in(self):
+        self.call('save', name='Work')
+        FakeBackend.values['dpi'] = 400
+        loaded = self.call('snapshot', resume=True)
+        self.assertEqual(loaded['active'], {'unit-id': 'Work'})
+        self.assertEqual(FakeBackend.values['dpi'], 1800)
+
+    def test_first_named_save_also_creates_the_current_profile(self):
+        loaded = self.call('save', name='Work', autosave=True)
+        self.assertEqual(loaded['active'], {'unit-id': service.CURRENT_PROFILE})
+        self.assertEqual(len(loaded['profiles']), 2)
+
+
 if __name__=='__main__': unittest.main()

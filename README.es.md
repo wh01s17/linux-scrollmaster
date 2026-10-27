@@ -228,14 +228,21 @@ sudo udevadm control --reload
    soltar el control y se confirman leyendo el mouse.
 4. En **Botones y gestos** asigna funciones o atajos. «Probar asignaciones» permite
    comprobar Alt/Ctrl y Copiar/Pegar sin salir de la app.
-5. Guarda un perfil. Puedes reaplicarlo al reconectar o asignarlo a una aplicación.
+5. Cada cambio se guarda automáticamente en **Perfil actual**, incluidos botones,
+   atajos y gestos. Usa **Guardar como…** para conservar una copia con nombre o
+   asignarla a una aplicación. La configuración se carga al abrir y reconectar,
+   sin casilla optativa.
 
 Las acciones de teclado y los gestos funcionan mientras la app está abierta, o en
 la bandeja si activas esa preferencia. Al salir, la app libera los botones que
 capturaba y esas acciones dejan de funcionar. Los ajustes de hardware (DPI, ruedas,
 reasignaciones nativas) quedan en el mouse hasta que su firmware los restablezca:
-el MX Master 3S vuelve a 1000 DPI al apagarse, y por eso existe la opción de
-reaplicar el perfil al reconectar.
+el MX Master 3S vuelve a 1000 DPI al apagarse, y por eso Linux ScrollMaster
+recupera automáticamente la configuración guardada.
+
+Guardar aprovecha la lectura que confirma el cambio; crear una copia con nombre
+no vuelve a consultar el mouse. El [contrato de guardado automático](docs/automatic-profiles.md)
+detalla el manejo de fallos y la aceptación física pendiente de este flujo nuevo.
 
 Los perfiles se guardan en `$XDG_CONFIG_HOME/linux-scrollmaster/profiles.json` (normalmente
 `~/.config/linux-scrollmaster/profiles.json`).

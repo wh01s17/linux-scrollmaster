@@ -12,7 +12,7 @@ export function useDevice() {
   });
   let unlisten: UnlistenFn | undefined;
   let disposed = false;
-  const refresh = () => { if (!state.busy.value) void state.request('snapshot'); };
+  const refresh = () => { if (!state.busy.value) void state.request('snapshot', { resume: true }); };
   onMounted(async () => {
     try {
       if ('__TAURI_INTERNALS__' in window) {
@@ -27,6 +27,6 @@ export function useDevice() {
   });
   // No re-read on window focus: it blocked every control while the mouse answered.
   // The native poll (every 5 s, without blocking) keeps the view current.
-  onUnmounted(() => { disposed = true; unlisten?.(); });
+  onUnmounted(() => { state.flushRemaps(); disposed = true; unlisten?.(); });
   return state;
 }

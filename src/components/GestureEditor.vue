@@ -14,8 +14,10 @@ const options = computed(() => control.value?.gesture_actions || []);
 function empty(): GestureConfig { return { type: 'gestures', units: 'tenths-mm', threshold: 30, actions: { up: null, down: null, left: null, right: null, click: null } }; }
 const draft = ref<GestureConfig>(empty());
 const dirty = ref(false);
+watch(() => props.state.selected.value, () => { dirty.value = false; draft.value = empty(); }, { flush: 'sync' });
 watch([() => props.state.selected.value, () => JSON.stringify(control.value?.value)], () => {
   const value = control.value?.value;
+  if (dirty.value && props.state.saving.value && JSON.stringify(value) !== JSON.stringify(draft.value)) return;
   draft.value = typeof value === 'object' && value ? JSON.parse(JSON.stringify(value)) : empty();
   dirty.value = false;
 }, { immediate: true });
@@ -28,17 +30,18 @@ const dpi = computed(() => {
 const valid = computed(() => validDistance(draft.value) && (!physical.value || dpi.value !== null) && Object.values(draft.value.actions).some(Boolean));
 function distanceUnits(event: Event) {
   const input = event.target as HTMLInputElement;
-  if (dpi.value !== null) { draft.value = changeDistanceUnits(draft.value, input.checked, dpi.value); dirty.value = true; }
+  if (dpi.value !== null) { draft.value = changeDistanceUnits(draft.value, input.checked, dpi.value); schedule(); }
   input.checked = physical.value;
 }
-async function apply() {
-  if (!valid.value || disabled.value) return;
-  await props.state.request('remap', { changes: { '195': JSON.parse(JSON.stringify(draft.value)) } });
+function schedule() {
+  dirty.value = true;
+  if (valid.value) props.state.stageRemap('195', draft.value);
+  else if (!Object.values(draft.value.actions).some(Boolean)) props.state.stageRemap('195', 195);
 }
 async function disable() { await props.state.request('remap', { changes: { '195': 195 } }); }
 function action(direction: keyof GestureConfig['actions'], value: string | number | null) {
   draft.value.actions[direction] = typeof value === 'string' ? value : null;
-  dirty.value = true;
+  schedule();
 }
 </script>
 
@@ -56,10 +59,10 @@ function action(direction: keyof GestureConfig['actions'], value: string | numbe
     </div>
     <label class="toggle-row">{{ t('gesture.keepDistance') }}<input type="checkbox" :checked="physical" :disabled="disabled || dpi === null" @change="distanceUnits"></label>
     <label class="field gesture-distance">{{ t('gesture.distance') }} <output>{{ distanceLabel(draft) }}</output>
-      <input v-model.number="draft.threshold" type="range" :min="physical ? 10 : 20" :max="physical ? 200 : 2000" :step="physical ? 1 : 20" :disabled="disabled" @input="dirty = true">
+      <input v-model.number="draft.threshold" type="range" :min="physical ? 10 : 20" :max="physical ? 200 : 2000" :step="physical ? 1 : 20" :disabled="disabled" @input="dirty = true" @change="schedule">
       <small>{{ physical ? t('gesture.physicalHint') : t('gesture.countsHint') }}</small>
     </label>
-    <div class="gesture-buttons"><button :disabled="disabled || !valid || (active && !dirty)" @click="apply">{{ active ? t('gesture.apply') : t('gesture.enable') }}</button><button v-if="active" :disabled="disabled" @click="disable">{{ t('gesture.restore') }}</button></div>
+    <div v-if="active" class="gesture-buttons"><button :disabled="disabled" @click="disable">{{ t('gesture.restore') }}</button></div>
     <small>{{ t('gesture.footer') }}</small>
   </details>
 </template>

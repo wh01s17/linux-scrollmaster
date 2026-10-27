@@ -58,6 +58,7 @@ struct State {
     prepare_delay: bool,
     read_delay: bool,
     after_prepare: Option<Box<dyn FnOnce()>>,
+    after_apply: Option<Box<dyn FnOnce()>>,
     active_at_apply: Vec<Value>,
     store: ProfileStore,
 }
@@ -132,6 +133,9 @@ impl ProfileBackend for Backend {
         if s.corrupt_receipt {
             snapshot["settings"]["dpi"]["value"] = json!(0);
         }
+        if let Some(hook) = s.after_apply.take() {
+            hook();
+        }
         Ok(Applied {
             confirmed,
             snapshot,
@@ -154,6 +158,7 @@ fn fixture(armed: bool) -> (Sandbox, Rc<RefCell<State>>, ProfileService<Backend>
         prepare_delay: false,
         read_delay: false,
         after_prepare: None,
+        after_apply: None,
         active_at_apply: vec![],
         store: store.clone(),
     }));
@@ -505,4 +510,170 @@ fn changed_identity_in_a_snapshot_is_not_saved_or_presented_as_the_device() {
     let result = service.handle(&json!({"op":"snapshot"}), None).unwrap();
     assert_eq!(result["devices"], json!([]));
     assert!(!state.borrow().calls.contains(&"apply"));
+}
+
+#[test]
+fn autosave_uses_the_confirmed_receipt_and_recovers_after_drift() {
+    let (dir, state, mut service) = fixture(true);
+    let mut request = set(2000);
+    request["autosave"] = json!(true);
+    let response = service.handle(&request, None).unwrap();
+    assert_eq!(state.borrow().calls, vec!["prepare", "apply"]);
+    assert_eq!(state.borrow().active_at_apply, vec![json!({})]);
+    assert_eq!(response["active"][ID], crate::profiles::CURRENT_PROFILE);
+    let saved = dir.store().load().unwrap();
+    let current = saved
+        .document()
+        .profiles()
+        .iter()
+        .find(|p| p["name"] == crate::profiles::CURRENT_PROFILE)
+        .unwrap();
+    assert_eq!(current["settings"]["dpi"], 2000);
+    assert_eq!(current["buttons"]["83"], 83);
+    assert_eq!(saved.document().profiles()[0]["settings"]["dpi"], 1800);
+    state.borrow_mut().snapshot["settings"]["dpi"]["value"] = json!(1000);
+    let result = service.handle(&json!({"op":"snapshot"}), None).unwrap();
+    assert_eq!(result["devices"][0]["settings"]["dpi"]["value"], 2000);
+}
+
+#[test]
+fn current_profile_copies_work_offline_and_never_overwrite_named_profiles() {
+    let (dir, state, mut service) = fixture(false);
+    let mut request = set(2000);
+    request["autosave"] = json!(true);
+    service.handle(&request, None).unwrap();
+    state.borrow_mut().calls.clear();
+    state.borrow_mut().fail_read = true;
+    let request = json!({"op":"save_copy","device":ID,"name":"Favorite"});
+    service.handle(&request, None).unwrap();
+    assert!(state.borrow().calls.is_empty());
+    let bytes = dir.bytes();
+    assert!(service.handle(&request, None).is_err());
+    assert_eq!(dir.bytes(), bytes);
+    let saved = dir.store().load().unwrap();
+    assert_eq!(
+        saved
+            .document()
+            .profiles()
+            .iter()
+            .find(|p| p["name"] == "Favorite")
+            .unwrap()["settings"]["dpi"],
+        2000
+    );
+}
+
+#[test]
+fn partial_or_unconfirmed_edits_never_replace_or_rearm_the_current_profile() {
+    for corrupt in [false, true] {
+        let (dir, state, mut service) = fixture(true);
+        state.borrow_mut().fail_apply = !corrupt;
+        state.borrow_mut().corrupt_receipt = corrupt;
+        let mut request = set(2000);
+        request["autosave"] = json!(true);
+        assert!(service.handle(&request, None).is_err());
+        let saved = dir.store().load().unwrap();
+        assert!(saved
+            .document()
+            .profiles()
+            .iter()
+            .all(|p| p["name"] != crate::profiles::CURRENT_PROFILE));
+        assert_eq!(saved.document().as_value()["active"], json!({}));
+    }
+}
+
+#[test]
+fn incomplete_autosave_reports_an_applied_but_unsaved_change() {
+    let (dir, state, mut service) = fixture(true);
+    state.borrow_mut().snapshot["settings"]["smart-shift"]["available"] = json!(false);
+    let mut request = set(2000);
+    request["autosave"] = json!(true);
+    let error = service.handle(&request, None).unwrap_err();
+    assert!(error
+        .message
+        .contains("El cambio se aplicó, pero no se pudo guardar"));
+    assert_eq!(error.confirmed, vec!["dpi"]);
+    assert_eq!(
+        dir.store().load().unwrap().document().as_value()["active"],
+        json!({})
+    );
+}
+
+#[test]
+fn unchanged_poll_uses_one_fresh_snapshot_without_preflight_or_apply() {
+    let (_dir, state, mut service) = fixture(true);
+    service.handle(&json!({"op":"snapshot"}), None).unwrap();
+    state.borrow_mut().calls.clear();
+    let result = service.handle(&json!({"op":"snapshot"}), None).unwrap();
+    assert_eq!(state.borrow().calls, vec!["snapshot"]);
+    assert_eq!(result["reconciliation"][0]["applied"], json!([]));
+}
+
+#[test]
+fn startup_loads_a_saved_profile_without_an_opt_in_and_keeps_current_preferred() {
+    let (_dir, state, mut service) = fixture(false);
+    let request = json!({"op":"snapshot","resume":true});
+    let loaded = service.handle(&request, None).unwrap();
+    // Existing documents keep their armed selection; otherwise use the most
+    // recently saved profile for this identity, until a current profile exists.
+    assert_eq!(loaded["active"][ID], "Game");
+    assert_eq!(loaded["devices"][0]["settings"]["dpi"]["value"], 2400);
+    service
+        .handle(
+            &json!({"op":"set","device":ID,"changes":{"dpi":2100},"autosave":true}),
+            None,
+        )
+        .unwrap();
+    service
+        .handle(&json!({"op":"auto","device":ID,"name":null}), None)
+        .unwrap();
+    state.borrow_mut().snapshot["settings"]["dpi"]["value"] = json!(1000);
+    let loaded = service.handle(&request, None).unwrap();
+    assert_eq!(loaded["active"][ID], crate::profiles::CURRENT_PROFILE);
+    assert_eq!(loaded["devices"][0]["settings"]["dpi"]["value"], 2100);
+}
+
+#[test]
+fn first_named_save_also_creates_and_arms_the_current_profile() {
+    let (_dir, _state, mut service) = fixture(false);
+    let result = service
+        .handle(
+            &json!({"op":"save","device":ID,"name":"Favorite","autosave":true}),
+            None,
+        )
+        .unwrap();
+    assert_eq!(result["active"][ID], crate::profiles::CURRENT_PROFILE);
+    assert!(result["profiles"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|p| p["name"] == "Favorite"));
+}
+
+#[test]
+fn a_store_conflict_after_apply_reports_unsaved_without_overwriting_the_file() {
+    let (dir, state, mut service) = fixture(true);
+    let path = dir.0.join("linux-scrollmaster/profiles.json");
+    state.borrow_mut().after_apply = Some(Box::new(move || {
+        let mut bytes = fs::read(&path).unwrap();
+        bytes.push(b'\n');
+        fs::write(&path, bytes).unwrap();
+    }));
+    let error = service
+        .handle(
+            &json!({"op":"set","device":ID,"changes":{"dpi":2000},"autosave":true}),
+            None,
+        )
+        .unwrap_err();
+    assert_eq!(error.stage, "persistence");
+    assert_eq!(error.confirmed, vec!["dpi"]);
+    assert!(error
+        .message
+        .contains("El cambio se aplicó, pero no se pudo guardar"));
+    let stored = dir.store().load().unwrap();
+    assert_eq!(stored.document().as_value()["active"], json!({}));
+    assert!(stored
+        .document()
+        .profiles()
+        .iter()
+        .all(|p| p["name"] != crate::profiles::CURRENT_PROFILE));
 }

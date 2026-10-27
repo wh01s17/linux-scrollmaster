@@ -1,5 +1,15 @@
 # Linux ScrollMaster: plan de implementación y continuidad
 
+**Actualización del 27 de octubre de 2026:** la GUI guarda cada cambio confirmado
+en **Perfil actual**. **Guardar como…** crea copias con nombre sin consultar HID;
+atajos y gestos ya no exigen aplicar manualmente. La carga al iniciar y al
+reconectar es automática, sin casilla optativa. El sondeo nativo evita repetir
+preflight/apply cuando la lectura fresca coincide. Contrato, fallos, pruebas y
+aceptación física pendiente: [guardado automático](docs/automatic-profiles.md).
+Las descripciones históricas siguientes de guardado manual y reaplicación
+optativa quedan sustituidas por ese contrato. El paquete 0.2.1 usa Rust nativo;
+el backend Python sigue disponible como ruta de desarrollo heredada (README).
+
 **Corrección del 26 de octubre de 2026:** el sondeo cancelaba gestos físicos
 incluso con DPI idénticos y descartaba nuevas pulsaciones durante la consulta.
 Se conserva el recorrido provisional y se confirma su salida tras validar el

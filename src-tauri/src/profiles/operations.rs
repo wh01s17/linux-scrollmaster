@@ -6,6 +6,8 @@ use super::{
 use serde_json::{json, Value};
 use std::collections::BTreeSet;
 
+pub const CURRENT_PROFILE: &str = "__current__";
+
 #[derive(Clone, Debug)]
 pub struct Management {
     pub document: Document,
@@ -115,6 +117,7 @@ impl Document {
                     "rule_set",
                     "rule_delete",
                     "auto",
+                    "save_copy",
                 ]
                 .contains(op)
             })
@@ -123,6 +126,25 @@ impl Document {
         let mut transfer = None;
         let mut changed = true;
         match op {
+            "save_copy" => {
+                let name = normalized_name(&request["name"])?;
+                if name == CURRENT_PROFILE
+                    || self
+                        .profiles()
+                        .iter()
+                        .any(|p| p["device"] == device && p["name"] == name)
+                {
+                    return Err("Profile name already exists".into());
+                }
+                let mut profile = self
+                    .profiles()
+                    .iter()
+                    .find(|p| p["device"] == device && p["name"] == CURRENT_PROFILE)
+                    .cloned()
+                    .ok_or("No current profile saved yet")?;
+                profile["name"] = json!(name);
+                result["profiles"].as_array_mut().unwrap().push(profile);
+            }
             "auto" => match request.get("name") {
                 None | Some(Value::Null) => {
                     result["active"].as_object_mut().unwrap().remove(device);
@@ -234,6 +256,9 @@ impl Document {
                     }
                     "rename" => {
                         let new = normalized_name(&request["new_name"])?;
+                        if old == CURRENT_PROFILE || new == CURRENT_PROFILE {
+                            return Err("The current profile name is reserved".into());
+                        }
                         if new == old {
                             changed = false;
                         } else {
@@ -261,6 +286,9 @@ impl Document {
                         }
                     }
                     "delete" => {
+                        if old == CURRENT_PROFILE {
+                            return Err("The current profile cannot be deleted".into());
+                        }
                         result["profiles"].as_array_mut().unwrap().remove(index);
                         if let Some(rules) = result.get_mut("rules").and_then(Value::as_array_mut) {
                             rules.retain(|r| r["device"] != device || r["profile"] != old);

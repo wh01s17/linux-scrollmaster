@@ -21,7 +21,8 @@ pub const BACKEND_ENV: &str = "SCROLLMASTER_BACKEND";
 const LOCATE_TIMEOUT: Duration = Duration::from_secs(4);
 const LOCATE_RETRY: Duration = Duration::from_secs(10);
 const SHUTDOWN_TIMEOUT: Duration = Duration::from_secs(25);
-const LOCAL: [&str; 9] = [
+const LOCAL: [&str; 10] = [
+    "save_copy",
     "auto",
     "rename",
     "delete",
@@ -61,6 +62,7 @@ pub struct NativeHost {
     focus: Box<Focus>,
     last_failure: Option<(Instant, String)>,
     last_devices: Option<Value>,
+    resume_pending: bool,
 }
 impl NativeHost {
     /// No HID, process or file access until the first request.
@@ -100,18 +102,26 @@ impl NativeHost {
             focus: Box::new(|| Box::new(crate::native::NoDesktop)),
             last_failure: None,
             last_devices: None,
+            resume_pending: false,
         }
     }
     /// One serialized request. A transport failure drops (kills) the worker;
     /// its independent guardian restores HID. The request is never repeated.
     pub fn request(&mut self, payload: &Value, timeout: Duration) -> Result<Value, String> {
         let op = payload["op"].as_str().unwrap_or_default().to_owned();
+        if op == "snapshot" && payload["resume"] == true {
+            self.resume_pending = true;
+        }
         if self.worker.is_none() {
             if let Err(error) = self.start() {
                 return self.offline(payload, &op, error);
             }
         }
-        let reply = self.worker.as_mut().unwrap().transact(payload, timeout);
+        let mut payload = payload.clone();
+        if op == "snapshot" && self.resume_pending {
+            payload["resume"] = json!(true);
+        }
+        let reply = self.worker.as_mut().unwrap().transact(&payload, timeout);
         let mut reply = match reply {
             Ok(reply) => reply,
             Err(error) => {
@@ -121,8 +131,11 @@ impl NativeHost {
             }
         };
         if reply["ok"] == true {
-            let data = &mut reply["data"];
             if op == "snapshot" {
+                self.resume_pending = false;
+            }
+            let data = &mut reply["data"];
+            if ["snapshot", "set", "remap", "restore", "save"].contains(&op.as_str()) {
                 self.last_devices = Some(data["devices"].clone());
             } else if LOCAL.contains(&op.as_str()) {
                 // Local operations do not read HID. Show the latest real reading

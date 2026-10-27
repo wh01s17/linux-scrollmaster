@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue';
 import type { createDeviceState } from '../deviceState';
 import { t, tr } from '../i18n';
+import { profileLabel } from '../currentProfile';
 const props = defineProps<{ state: ReturnType<typeof createDeviceState> }>();
 const { data, selected, profiles, busy, request } = props.state;
 const applications = ref<string[]>([]); const application = ref(''); const profile = ref('');
@@ -23,14 +24,14 @@ async function save() {
     <summary>{{ t('apps.title') }} <small>Hyprland</small></summary>
     <p>{{ t('apps.intro') }}</p>
     <p v-if="!desktop?.available" class="tip">{{ desktop?.error ? tr(desktop.error) : t('apps.unavailable') }} {{ t('apps.unavailableHint') }}</p>
-    <p v-else role="status">{{ t('apps.status', { app: desktop.active_application || t('apps.noWindow'), profile: effective }) }}</p>
+    <p v-else role="status">{{ t('apps.status', { app: desktop.active_application || t('apps.noWindow'), profile: profileLabel(effective) }) }}</p>
     <button :disabled="busy" @click="refresh">{{ t('apps.search') }}</button>
     <div class="application-form">
       <label class="field">{{ t('apps.application') }}<select v-model="application" :disabled="busy || !applications.length"><option disabled value="">{{ t('apps.searchFirst') }}</option><option v-for="app in applications" :key="app">{{ app }}</option></select></label>
-      <label class="field">{{ t('apps.profile') }}<select v-model="profile" :disabled="busy || !profiles.length"><option disabled value="">{{ t('profiles.select') }}</option><option v-for="item in profiles" :key="item.name">{{ item.name }}</option></select></label>
+      <label class="field">{{ t('apps.profile') }}<select v-model="profile" :disabled="busy || !profiles.length"><option disabled value="">{{ t('profiles.select') }}</option><option v-for="item in profiles" :key="item.name" :value="item.name">{{ profileLabel(item.name) }}</option></select></label>
       <button :disabled="busy || !selected || !application || !profiles.some(p => p.name === profile)" @click="save">{{ t('apps.saveRule') }}</button>
     </div>
-    <ul v-if="rules.length"><li v-for="rule in rules" :key="rule.application"><span>{{ rule.application }} → {{ rule.profile }}</span><button :disabled="busy" @click="request('rule_delete', { application: rule.application })">{{ t('apps.remove') }}</button></li></ul>
+    <ul v-if="rules.length"><li v-for="rule in rules" :key="rule.application"><span>{{ rule.application }} → {{ profileLabel(rule.profile) }}</span><button :disabled="busy" @click="request('rule_delete', { application: rule.application })">{{ t('apps.remove') }}</button></li></ul>
     <small>{{ t('apps.footer') }}</small>
   </details>
 </template>
