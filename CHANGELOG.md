@@ -6,6 +6,23 @@ All notable changes to Linux ScrollMaster are documented here. The format follow
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-10-29
+
+### Fixed
+
+- Hyprland 0.57 is now supported. The version check accepted only 0.55 and 0.56,
+  which hid the **scroll distance** control and disabled workspace and window
+  actions after updating to 0.57.0. The Lua IPC contract was checked read-only
+  against a live 0.57.0 session.
+- The header badge showed `0.1` instead of the installed version. It now comes
+  from `package.json`.
+
+### Validation
+
+- `pnpm test`, the frontend build, `cargo check` and 594 Rust tests passed. The
+  scroll distance control was confirmed working on Hyprland 0.57.0. Workspace and
+  window actions on 0.57 still await physical acceptance.
+
 ## [0.3.1] - 2026-10-27
 
 ### Changed
@@ -120,7 +137,8 @@ First public release.
 - Packages for Arch Linux, Debian/Ubuntu, Fedora and AppImage, built in CI, with a
   udev rule limited to the receiver's HID++ interface.
 
-[Unreleased]: https://github.com/wh01s17/linux-scrollmaster/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/wh01s17/linux-scrollmaster/compare/v0.3.2...HEAD
+[0.3.2]: https://github.com/wh01s17/linux-scrollmaster/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/wh01s17/linux-scrollmaster/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/wh01s17/linux-scrollmaster/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/wh01s17/linux-scrollmaster/compare/v0.2.0...v0.2.1
