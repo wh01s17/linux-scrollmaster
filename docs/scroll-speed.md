@@ -11,14 +11,14 @@ ofrecen modo, resolución e inversión. La «velocidad» de Logi Options+ es sof
 desvía la rueda y reinyecta eventos; en Linux exigiría `uinput` y diversion, descartados
 por permisos globales de entrada y por el riesgo de dejar la rueda sin consumidor.
 
-Hyprland 0.55/0.56 admite `scroll_factor` por dispositivo (`hl.device`). Decisión del
+Hyprland 0.55–0.57 admite `scroll_factor` por dispositivo (`hl.device`). Decisión del
 usuario (2026-10-24): ofrecerlo solo en Hyprland y aplicarlo en tiempo de ejecución por
 IPC. Se cambia la configuración en memoria de la sesión, nunca archivos de
 `~/.config/hypr` ni de Omarchy. Fuera de Hyprland el control no aparece.
 
 ## Implementación
 
-- `src-tauri/src/native/scroll_factor.rs`: comprueba versión 0.55/0.56 y `hl.device`,
+- `src-tauri/src/native/scroll_factor.rs`: comprueba versión 0.55–0.57 y `hl.device`,
   lee `j/devices` y elige solo `logitech-usb-receiver-mouse` (Bolt) o nombres con
   `mx-master-3s` (Bluetooth), con nombres restringidos a `[A-Za-z0-9-_.:]` antes de
   entrar en Lua. Envía `/eval hl.device({ name = "…", scroll_factor = N.NN })` por
@@ -41,6 +41,18 @@ IPC. Se cambia la configuración en memoria de la sesión, nunca archivos de
   restablecer, rango, error con relectura, respuesta inválida).
 - Contra Hyprland 0.56.2 real, con factor 1.00 (equivalente al global): las cargas
   exactas de sondeo, `hl.device`, `j/getoption` y `j/devices` respondieron como se espera.
+
+## Hyprland 0.57 (2026-10-29)
+
+Tras actualizar el sistema a Hyprland 0.57.0 el control desapareció: la comprobación
+de versión solo aceptaba 0.55/0.56 y la interfaz oculta el motivo cuando no está
+disponible. Se amplió `supported_version` a 0.57.x (compartida con las acciones de
+escritorio) tras confirmar contra 0.57.0 real, solo con lecturas: ambas sondas
+(`hl.device` y `hl.dsp.focus`/`hl.dsp.window.fullscreen`) responden `ok`, `j/devices`
+expone `scrollFactor` (-1 sin valor propio) y `j/getoption input:scroll_factor`
+mantiene el campo `float`. El usuario confirmó (2026-10-29) que el control vuelve a
+aparecer y cambia la distancia de desplazamiento en 0.57.0. 0.58 sigue rechazado hasta
+revisarlo.
 
 ## Limitaciones
 

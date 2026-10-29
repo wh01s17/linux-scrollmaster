@@ -655,7 +655,7 @@ del checkout y con rutas/dependencias verificadas. No confundir PKGBUILD con rel
   parcial. Los atajos personalizados están implementados, pendientes de aceptación
   física; usan keymap US y dependen de la aplicación/compositor. Sin helper privilegiado.
   Solo un mouse con modificadores a la vez.
-- Acciones de espacios/ventanas limitadas a Hyprland 0.55/0.56 Lua. Capacidades
+- Acciones de espacios/ventanas limitadas a Hyprland 0.55–0.57 Lua (0.57 añadido el 2026-10-29). Capacidades
   reales comprobadas; aceptación GUI/mouse pendiente. Un timeout no se reintenta,
   porque la acción podría haberse ejecutado. No hay dispatcher/Lua arbitrario.
 - Inicio automático depende de un escritorio que procese XDG; no se instala un

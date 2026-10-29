@@ -72,7 +72,7 @@ Details of what was verified and what is pending are in the
   (Ctrl/Alt/Shift/Super + key).
 - **Gestures:** hold the thumb button and move in five directions (up, down, left,
   right and no movement), with an adjustable distance that stays stable when DPI changes.
-- **Desktop (Hyprland 0.55/0.56):** previous/next workspace, maximize and fullscreen.
+- **Desktop (Hyprland 0.55–0.57):** previous/next workspace, maximize and fullscreen.
 - **Profiles:** automatic saving to Current profile, named copies, restore, rename, export and import; automatic recovery on reconnect;
   automatic switching by focused application on Hyprland.
 - **Interface:** English or Spanish (chosen in Preferences), a 3D mouse that turns to

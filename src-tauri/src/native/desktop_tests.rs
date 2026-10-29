@@ -135,12 +135,14 @@ fn supported_versions_match_the_existing_lua_contract() {
         "0.56.2",
         "v0.56.2-3-gdeadbeef",
         "0.56.2+dev.1",
+        "0.57.0",
+        "v0.57.1",
     ] {
         assert!(supported_version(version), "{version}");
     }
     for version in [
         "0.54.9",
-        "0.57.0",
+        "0.58.0",
         "1.56.0",
         "0.56",
         "0.56.x",

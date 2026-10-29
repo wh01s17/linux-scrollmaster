@@ -17,7 +17,7 @@
 | Gestos direccionales | Copiar/Pegar izquierda/derecha verificados con usuario | raw XY y recuperación tras cierre/SIGKILL reales |
 | Gestos multimedia | Seis acciones implementadas con pruebas | Volumen/reproducción confirmados; otras acciones pendientes; dependen del compositor/reproductor |
 | Atajos personalizados | Implementados en laterales y gestos; aceptación física pendiente | Ctrl/Alt/Shift/Super y teclas del catálogo, keymap US; sin macros ni comandos |
-| Acciones de espacios/ventanas | Implementadas y probadas con dobles; aceptación física pendiente | Cuatro opciones; Hyprland 0.55/0.56 Lua y teclado virtual Wayland |
+| Acciones de espacios/ventanas | Implementadas y probadas con dobles; aceptación física pendiente | Cuatro opciones; Hyprland 0.55–0.57 Lua y teclado virtual Wayland |
 | Perfiles por aplicación | Implementados para Hyprland | Foco y catálogo reales; cambio efectivo de mouse pendiente |
 | Instancia única / bandeja | Implementadas y probadas automáticamente | Bandeja optativa y desactivada por defecto; aceptación gráfica pendiente |
 | Inicio automático XDG | Implementado, optativo y probado en directorios temporales | Escritorio con autostart XDG; Hyprland por sí solo no basta; aceptación de inicio de sesión pendiente |

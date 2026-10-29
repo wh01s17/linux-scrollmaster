@@ -71,7 +71,7 @@ fn preflight(path: &Path) -> Result<(), String> {
     let version: Value = serde_json::from_slice(&request(path, b"j/version", 1 << 20)?)
         .map_err(|_| "Respuesta de versión de Hyprland no válida")?;
     if !version["version"].as_str().is_some_and(supported_version) {
-        return Err("La velocidad de desplazamiento requiere Hyprland 0.55 o 0.56".into());
+        return Err("La velocidad de desplazamiento requiere Hyprland 0.55, 0.56 o 0.57".into());
     }
     require_ok(&request(path, PROBE, 4096)?)
 }

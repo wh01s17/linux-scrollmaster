@@ -20,6 +20,7 @@ onMounted(scrollSpeed.load);
 const zone = ref('pointer'); const dark = ref(localStorage.getItem('linux-scrollmaster-theme') !== 'light');
 watch(zone, z => { if (z === 'wheel' || z === 'thumb') void scrollSpeed.load(); });
 const keySample = ref('');
+const appVersion = __APP_VERSION__;
 const shortcutSample = ref('');
 function testModifier(event: KeyboardEvent) {
   if (['Control', 'Alt', 'Shift', 'Meta'].includes(event.key)) return;
@@ -83,7 +84,7 @@ function theme() { dark.value = !dark.value; localStorage.setItem('linux-scrollm
       <div class="sidebar-bottom"><span>{{ t('app.madeForLinux') }}</span><small>{{ t('app.localControl') }}</small><button class="theme" @click="theme">{{ dark ? t('app.themeLight') : t('app.themeDark') }}</button></div>
     </aside>
     <main>
-      <header><div class="breadcrumb">{{ t('app.devices') }} <span>/</span> MX Master 3S</div><div class="header-tools"><button class="refresh" @click="openPreferences">{{ t('app.preferences') }}</button><span class="badge">{{ t('app.preview') }}</span></div></header>
+      <header><div class="breadcrumb">{{ t('app.devices') }} <span>/</span> MX Master 3S</div><div class="header-tools"><button class="refresh" @click="openPreferences">{{ t('app.preferences') }}</button><span class="badge">{{ t('app.preview', { version: appVersion }) }}</span></div></header>
       <section class="heading"><div><p class="eyebrow accent">{{ t('app.tagline') }}</p><h1>{{ mouse?.name ?? 'MX Master 3S' }}</h1><span class="connection"><i :class="{ online: mouse }"></i>{{ mouse?.connection ?? t('app.waiting') }}</span><p>{{ t('app.subtitle') }}</p></div><div class="heading-tools"><button class="refresh" :disabled="busy" @click="request('snapshot')">{{ busy ? t('app.reading') : t('app.refresh') }}</button><span class="battery" :class="battery.tone" role="img" :aria-label="battery.label" :title="battery.label"><span class="battery-icon" aria-hidden="true"><span class="battery-fill" :style="{ width: battery.fill + '%' }"></span></span><strong>{{ battery.text }}</strong><span v-if="battery.charging" class="battery-bolt" aria-hidden="true">⚡</span></span></div></section>
       <div v-if="error" class="notice error" role="alert">{{ tr(error) }}</div>
       <div v-if="data.diagnostic" class="notice" role="status">{{ tr(data.diagnostic) }}</div>

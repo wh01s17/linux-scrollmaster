@@ -63,7 +63,7 @@ impl<R: FnMut() -> Result<PathBuf, String>> Hyprland<R> {
         let version: serde_json::Value =
             serde_json::from_slice(&reply).map_err(|_| "Invalid Hyprland version reply")?;
         if !version["version"].as_str().is_some_and(supported_version) {
-            return Err("Desktop actions require Hyprland 0.55 or 0.56 with Lua IPC".into());
+            return Err("Desktop actions require Hyprland 0.55, 0.56 or 0.57 with Lua IPC".into());
         }
         require_ok(&exchange(path, PROBE, 4096, self.timeout)?)
     }
@@ -112,6 +112,7 @@ pub(super) fn supported_version(value: &str) -> bool {
     let Some(rest) = value
         .strip_prefix("0.55.")
         .or_else(|| value.strip_prefix("0.56."))
+        .or_else(|| value.strip_prefix("0.57."))
     else {
         return false;
     };

@@ -15,7 +15,7 @@ su borrador y botón Aplicar; ejecutan al soltar. Mantener pulsado no repite. El
 se toma cuando se ejecuta, sin capturar una ventana o monitor al asignar el botón.
 No se asignan acciones ni se guardan perfiles automáticamente.
 
-Requieren Linux ScrollMaster abierta, teclado virtual Wayland disponible y Hyprland 0.55/0.56
+Requieren Linux ScrollMaster abierta, teclado virtual Wayland disponible y Hyprland 0.55–0.57
 con configuración Lua. Otras versiones se rechazan explícitamente hasta contrastar
 su interfaz. Fuera de ese entorno las opciones aparecen deshabilitadas y se explica
 el motivo. Los atajos y las funciones nativas conservan su validación independiente.

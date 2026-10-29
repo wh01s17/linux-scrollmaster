@@ -72,7 +72,7 @@ El detalle de lo comprobado y lo pendiente está en el
 - **Gestos:** mantener el botón del pulgar y mover en cinco direcciones (arriba,
   abajo, izquierda, derecha y sin movimiento), con distancia ajustable y estable
   al cambiar los DPI.
-- **Escritorio (Hyprland 0.55/0.56):** espacio anterior/siguiente, maximizar y pantalla completa.
+- **Escritorio (Hyprland 0.55–0.57):** espacio anterior/siguiente, maximizar y pantalla completa.
 - **Perfiles:** guardar, restaurar, renombrar, exportar e importar; reaplicar al
   reconectar; cambio automático por aplicación enfocada en Hyprland.
 - **Interfaz:** en español o inglés (se elige en Preferencias), mouse 3D que gira
