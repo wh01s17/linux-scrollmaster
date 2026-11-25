@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Versión del tag
         if: startsWith(github.ref, 'refs/tags/')
@@ -32,11 +32,11 @@ jobs:
             libayatana-appindicator3-dev librsvg2-dev libssl-dev \
             libwayland-dev libxkbcommon-dev
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           version: 12.3.4
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: pnpm
@@ -63,7 +63,7 @@ jobs:
           done
           ls -l out
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: bundles
           if-no-files-found: error
@@ -80,7 +80,7 @@ jobs:
           pacman -Syu --noconfirm --needed git python rust nodejs pnpm pkgconf \
             gtk3 webkit2gtk-4.1 openssl wayland libxkbcommon libayatana-appindicator systemd
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Versión del tag
         if: startsWith(github.ref, 'refs/tags/')
@@ -94,7 +94,7 @@ jobs:
           chown -R builder /tmp/kit
           su builder -c 'cd /tmp/kit && makepkg -f --noconfirm'
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: arch
           if-no-files-found: error
@@ -108,9 +108,9 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: dist
           merge-multiple: true
